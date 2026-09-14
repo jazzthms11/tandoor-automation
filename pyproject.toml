@@ -6,6 +6,7 @@ requires-python = "==3.13.*"
 dependencies = [
     "httpx==0.28.1",
     "pydantic==2.13.5",
+    "pydantic-settings==2.15.0",
 ]
 
 [dependency-groups]
@@ -36,7 +37,7 @@ convention = "google"
 "tests/*" = ["D", "ANN"]
 
 [tool.ty.rules]
-possibly-unbound-attribute = "error"
+possibly-missing-attribute = "error"
 unresolved-import = "error"
 
 [tool.pytest.ini_options]
