@@ -8,8 +8,16 @@ from datetime import date
 
 import pytest
 
-from tandoor_automation.bundle import PlanBundle, next_week, overlaps, parse_week, week_days
+from tandoor_automation.bundle import (
+    PlanBundle,
+    build_bundle,
+    next_week,
+    overlaps,
+    parse_week,
+    week_days,
+)
 from tandoor_automation.models import MealType, PlannedMeal, Recipe
+from tandoor_automation.tandoor import TandoorClient
 
 
 def meal(from_date: str, to_date: str) -> PlannedMeal:
@@ -20,6 +28,37 @@ def meal(from_date: str, to_date: str) -> PlannedMeal:
         meal_type_name="Mittagessen",
         servings=2,
     )
+
+
+class FakeTandoor(TandoorClient):
+    """Ein Client ohne HTTP, der den letzten abgefragten Tag mitschreibt."""
+
+    def __init__(self, meals):
+        self.meals = meals
+        self.last_day = date.min
+
+    def meal_plan(self, start, end):
+        self.last_day = end
+        return self.meals
+
+    def meal_types(self):
+        return []
+
+    def recipes(self):
+        return []
+
+
+def test_sonntagabend_der_woche_steht_schon_als_belegt_im_buendel():
+    """Der Sonntagabend reicht bis zum Montag danach und fiel deshalb aus der Abfrage.
+
+    Folge war ein `plan apply`, das beim zweiten Lauf genau diesen einen Eintrag nicht wiederfand
+    und ihn ein zweites Mal anlegte.
+    """
+    sonntagabend = meal("2026-09-27", "2026-09-28")
+    tandoor = FakeTandoor([sonntagabend])
+    bundle = build_bundle(tandoor, "2026-W39")
+    assert tandoor.last_day == date(2026, 9, 28)
+    assert bundle.occupied == [sonntagabend]
 
 
 def test_woche_beginnt_montag_und_endet_sonntag():

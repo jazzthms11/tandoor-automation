@@ -6,11 +6,11 @@ Zeitraum in der Woche, ist ein Platz doppelt belegt, wird jeder Platz der Woche 
 gut ist, also abwechslungsreich, eiweißreich und vegetarisch, entscheidet das Modell.
 """
 
-from datetime import date, timedelta
+from datetime import date
 
 from pydantic import BaseModel
 
-from tandoor_automation.bundle import PlanBundle
+from tandoor_automation.bundle import SPILLOVER, PlanBundle
 from tandoor_automation.models import MealType
 
 HOUSEHOLD = 2
@@ -99,7 +99,7 @@ def _period_problems(entry: ProposalEntry, bundle: PlanBundle) -> list[str]:
         problems.append(f"'{_label(entry)}': endet am {entry.to_date} vor dem Anfang")
     if not first <= entry.from_date <= last:
         problems.append(f"'{_label(entry)}': beginnt am {entry.from_date} außerhalb der Woche")
-    if entry.to_date > last + timedelta(days=1):
+    if entry.to_date > last + SPILLOVER:
         problems.append(f"'{_label(entry)}': endet am {entry.to_date}, zu weit nach der Woche")
     if entry.recipe_id is not None and entry.servings <= 0:
         problems.append(f"'{_label(entry)}': {entry.servings} Portionen")

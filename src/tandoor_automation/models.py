@@ -17,9 +17,12 @@ from pydantic import AliasChoices, BaseModel, Field, field_validator
 class Recipe(BaseModel):
     """Ein Rezept aus `/api/recipe/`, reduziert auf Aufwand, Schlagworte und Kurzbeschreibung.
 
-    `rating` und `last_cooked` fehlen mit Absicht: Tandoor liefert beide an jedem Rezept leer, weil
-    hier niemand bewertet und kein Kochtagebuch geführt wird. Wann ein Gericht zuletzt auf dem
-    Tisch stand, sagt die Planhistorie im Bündel ohnehin genauer.
+    `rating` ist die Grundbewertung aus `bewertung.tsv`, 5 heißt "geht quasi immer" und 1 "nie".
+    Sie steht nicht in der Antwort von `/api/recipe/`, die trägt das Feld immer leer. Tandoor
+    annotiert es nur beim Filtern, `TandoorClient.recipes` holt es deshalb getrennt nach.
+
+    `last_cooked` fehlt mit Absicht: hier wird kein Kochtagebuch geführt, und wann ein Gericht
+    zuletzt auf dem Tisch stand, sagt die Planhistorie im Bündel genauer.
     """
 
     id: int
@@ -29,12 +32,19 @@ class Recipe(BaseModel):
     working_time: int
     waiting_time: int
     servings: int
+    rating: int = 0
 
     @field_validator("description", mode="before")
     @classmethod
     def _no_none(cls, value: str | None) -> str:
         """Macht aus der fehlenden Beschreibung eine leere, die Hälfte der Rezepte hat keine."""
         return value or ""
+
+    @field_validator("rating", mode="before")
+    @classmethod
+    def _unrated_is_zero(cls, value: float | None) -> int:
+        """Macht aus der fehlenden Bewertung eine Null, so zählt Tandoor sie selbst auch."""
+        return round(value or 0)
 
     @field_validator("keywords", mode="before")
     @classmethod
@@ -82,3 +92,32 @@ class MealType(BaseModel):
     id: int
     name: str
     served_at: time | None = Field(default=None, validation_alias=AliasChoices("time", "served_at"))
+
+
+class CookLog(BaseModel):
+    """Ein Eintrag aus `/api/cook-log/`, reduziert auf Rezept, Note und Herkunft.
+
+    Tandoor mittelt die Noten aller Einträge eines Rezepts, statt die neueste zu nehmen. Die
+    Grundbewertung braucht deshalb genau einen Eintrag je Rezept, erkennbar an `comment`.
+
+    `created_by_id` zählt, weil die Instanz geteilt ist: die Liste gibt die Einträge aller
+    Mitesser zurück, Tandoors eigene Mittelung sieht dagegen nur die des anfragenden Nutzers.
+    """
+
+    id: int
+    recipe_id: int = Field(validation_alias=AliasChoices("recipe", "recipe_id"))
+    rating: int | None = None
+    comment: str = ""
+    created_by_id: int = Field(validation_alias=AliasChoices("created_by", "created_by_id"))
+
+    @field_validator("comment", mode="before")
+    @classmethod
+    def _no_none(cls, value: str | None) -> str:
+        """Macht aus dem fehlenden Kommentar einen leeren."""
+        return value or ""
+
+    @field_validator("created_by_id", mode="before")
+    @classmethod
+    def _user_id(cls, value: dict[str, int] | int) -> int:
+        """Zieht die ID aus dem eingebetteten Benutzer."""
+        return value["id"] if isinstance(value, dict) else value

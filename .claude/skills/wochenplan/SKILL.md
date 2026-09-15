@@ -14,10 +14,12 @@ die Wahl triffst du.
    sonst `--week 2026-W39`. Ist die Datei schon da und aus der Zielwoche, reicht sie
 2. Lies das Bündel. Es enthält die sieben Tage, die Mahlzeiten mit ihren Uhrzeiten, die schon
    belegten Plätze (`occupied`), acht Wochen Planhistorie (`history`) und das ganze Kochbuch
+   samt Grundbewertung (`rating`)
 3. Wähle die Gerichte und schreib `vorschlag/<woche>.json` nach dem Schema unten
 4. `uv run plan check vorschlag/<woche>.json`. Bessere nach, bis der Befehl sauber durchläuft
-5. Zeig Leo die Woche als Tabelle im Gespräch und sag in zwei, drei Zeilen, warum diese Gerichte.
-   Schreib **nicht** nach Tandoor, `plan apply` gibt es noch nicht
+5. Zeig Leo die Woche als Tabelle im Gespräch und sag in zwei, drei Zeilen, warum diese Gerichte
+6. Erst wenn Leo zustimmt: `uv run plan apply vorschlag/<woche>.json` schreibt die Woche nach
+   Tandoor. Von dir aus schreibst du **nicht**, der Vorschlag ist bis dahin nur eine Datei
 
 ## Der Haushalt
 
@@ -59,6 +61,27 @@ den Abend und einmal mit 2 für den Mittag. Gekocht wird beides am Samstag.
 
 ## Wie du wählst
 
+**Die Bewertung sagt, was erlaubt ist, die Historie sagt, was dran ist.** Jedes Rezept trägt im
+Bündel ein `rating` von 0 bis 5. Die Skala misst nicht Geschmack, sondern wie eng ein Gericht
+wiederkommen darf:
+
+| `rating` | Bedeutung | Frühestens wieder |
+| --- | --- | --- |
+| 5 | geht quasi immer | darf zwei Wochen hintereinander |
+| 4 | sehr gut, aber nicht jede Woche | nach einer Woche Pause |
+| 3 | kann man mal essen | nach mehreren Wochen, Richtwert vier |
+| 2 | eigentlich nicht gut | nur wenn Leo es ausdrücklich will |
+| 1 | nie | gar nicht, auch nicht als Lückenfüller |
+| 0 | nicht bewertet | erlaubt, aber nenn es beim Vorschlagen, damit Leo nachbewerten kann |
+
+**Eine 5 heißt nicht, dass das Gericht jede Woche drinstehen soll.** Sie hebt nur die Sperre auf.
+Unter allen Gerichten, die nach der Tabelle dürfen, gewinnt das, was am längsten her ist. Eine 4,
+die vier Wochen nicht dran war, schlägt eine 5 von letzter Woche. Sonst steht jede Woche Bolognese
+auf dem Tisch, und das ist genau der Fehler, den die Bewertung nicht machen soll.
+
+Die Note schlägt die übrigen Regeln nur nach unten: ein Gericht mit 1 kommt auch dann nicht auf
+den Tisch, wenn es sonst perfekt in die Woche passt.
+
 **Vegetarisch.** Der Haushalt isst seit kurzem fleischlos. Im Kochbuch stehen trotzdem
 Fleischgerichte, weil Verwandte dieselbe Instanz nutzen. Nimm Rezepte mit dem Schlagwort
 `Vegetarisch`. Ein Rezept mit `Fleisch`, `Rind` oder `Hähnchen` geht nur, wenn es sich offensichtlich
@@ -78,9 +101,10 @@ aber die Ausnahme, und dann sag es dazu.
 aufgewärmt noch schmecken. Aufläufe, Currys, Suppen und Bowls sind sichere Kandidaten, Salate mit
 Blattsalat und alles Frittierte nicht.
 
-**Abwechslung.** Nichts wiederholen, was in `history` in den letzten beiden Wochen stand. Kein
-Gericht zweimal in derselben Woche, ausgenommen das Paar Samstagabend und Sonntagmittag. Über den
-ganzen Plan hinweg nicht dreimal dieselbe Küche.
+**Abwechslung.** Der Mindestabstand steht in der Bewertungstabelle, und unter den erlaubten
+Gerichten kommt das an die Reihe, das am längsten her ist. Prüf das an `history`, nicht am Gefühl.
+Kein Gericht zweimal in derselben Woche, ausgenommen das Paar Samstagabend und Sonntagmittag. Über
+den ganzen Plan hinweg nicht dreimal dieselbe Küche.
 
 **Aufwand.** Am Sonntag wird dreimal gekocht, zwei Mittagsgerichte und ein Abendessen. Nimm dafür
 nicht drei Rezepte mit 50 Minuten `working_time`. Unter der Woche ist Zeit knapper als am
@@ -142,8 +166,9 @@ Zeitraum in der Woche liegt, ob ein belegter Platz überschrieben würde und ob 
 beide Mahlzeiten mindestens zwei Portionen eingeplant sind. Ein Eintrag ohne Rezept zählt dabei
 als versorgt und braucht keine Portionen, muss aber einen Titel tragen.
 
-Alles andere prüfst du selbst, bevor du Leo den Plan zeigst: vegetarisch, Eiweiß, die Mischung aus
-Reis und Nudeln, die Abwechslung gegen die Historie und der Aufwand an den Kochtagen.
+Alles andere prüfst du selbst, bevor du Leo den Plan zeigst: die Bewertung, vegetarisch, Eiweiß,
+die Mischung aus Reis und Nudeln, die Abwechslung gegen die Historie und der Aufwand an den
+Kochtagen.
 
 ## Wenn Leo etwas ändern will
 
@@ -160,8 +185,14 @@ dass die Wahl misslungen war.
   Portionszahl kippt die Deckung eines Tages, ohne dass man es sieht
 - **Zeig danach nur die geänderten Zeilen**, nicht die ganze Tabelle, außer Leo will sie sehen
 
-Sagt Leo, so passe es: Der Plan steht in `vorschlag/<woche>.json` und muss von Hand in Tandoor
-eingetragen werden, solange es `plan apply` nicht gibt. Sag das dazu, statt es zu verschweigen.
+Sagt Leo, so passe es, dann schreibt `uv run plan apply vorschlag/<woche>.json` die Woche nach
+Tandoor. Der Befehl prüft noch einmal gegen den Stand, wie er jetzt in Tandoor ist, und legt nur
+an, was dort noch fehlt. Ein zweiter Lauf schreibt deshalb nichts doppelt, und ein einzelner
+nachgebesserter Eintrag lässt sich mit demselben Befehl nachschieben. `--dry-run` zeigt vorher, was
+er tun würde.
+
+Was schon in Tandoor steht, ändert `plan apply` nicht. Soll ein bereits geschriebener Eintrag weg
+oder anders aussehen, gehört das in Tandoors Oberfläche; sag Leo das, statt es zu umgehen.
 
 ## Hinweise beim Aufruf
 
@@ -172,10 +203,23 @@ Fall dieser Woche, und die Regeln beschreiben nur den Normalfall.
 - **Eine Woche** (`W41`, `übernächste Woche`) → `plan bundle --week` entsprechend aufrufen
 - **Wenig Zeit an einem Kochtag** → dort Rezepte mit kurzer `working_time`, und am Wochenende darf
   eine Frosterportion einspringen
-- **Ein Wunschgericht** → fest einplanen und den Rest darum herum wählen
+- **Ein Wunschgericht** → fest einplanen und den Rest darum herum wählen, auch bei niedriger Note
 - **Etwas muss weg**, Reste oder eine offene Packung → als `note` an den passenden Eintrag
 - **Ein Platz fällt aus**, Besuch oder auswärts essen → trag einen Eintrag ohne Rezept ein, nur
   mit `title`, und stopf den Platz nicht mit einem Gericht, das niemand isst
 
 Widerspricht ein Hinweis einer Regel, folg dem Hinweis und sag in einem Satz, welche Regel dafür
 weichen musste.
+
+## Wenn Leo eine Bewertung ändern will
+
+Die Noten stehen in `bewertung.tsv` im Repo, eine Zeile je Rezept, erste Spalte die Sterne. Die
+Datei ist die Quelle, nicht Tandoor.
+
+- **Ändere die Zeile in der Datei**, dann `uv run plan rate`. Der Befehl fasst den vorhandenen
+  Eintrag im Kochprotokoll an, statt einen zweiten anzulegen
+- **Nicht in Tandoors Oberfläche bewerten.** Tandoor mittelt die Noten eines Rezepts, statt die
+  neueste zu nehmen → ein Klick dort verzieht die Note und die Datei stimmt nicht mehr
+- **Eine Note auf 0 setzen löscht sie** in Tandoor, das Rezept gilt dann wieder als unbewertet
+- **Ein neues Rezept fehlt in der Datei.** Häng eine Zeile an, Sterne und ID reichen, der Rest
+  ist Gedächtnisstütze

@@ -21,3 +21,28 @@ cp .env.example .env   # Tandoor-Token eintragen
 ```
 
 Ein Token wird in Tandoor unter *Einstellungen, API* erzeugt.
+
+## Wochenplan
+
+```bash
+uv run plan bundle                            # Kontextbündel der kommenden Woche
+uv run plan check vorschlag/2026-W39.json     # Vorschlag gegen das Bündel prüfen
+uv run plan apply vorschlag/2026-W39.json     # prüfen und nach Tandoor schreiben
+uv run plan rate                              # Grundbewertung aus bewertung.tsv abgleichen
+```
+
+Zwischen `bundle` und `check` sitzt der Wähler: im Gespräch Claude über den Skill unter
+`.claude/skills/wochenplan/`, später ein unbeaufsichtigter Lauf. Beide gehen durch dieselbe
+Prüfung.
+
+`apply` holt den Stand frisch aus Tandoor und legt nur an, was dort noch fehlt. Ein zweiter Lauf
+über denselben Vorschlag schreibt deshalb nichts doppelt. `--dry-run` zeigt, was er tun würde.
+
+## Bewertung
+
+`bewertung.tsv` trägt je Rezept eine Note von 0 bis 5. Sie misst nicht Geschmack, sondern wie oft
+ein Gericht darf: 5 geht quasi immer, 3 nur wenn es lange her ist, 1 nie, 0 heißt unbewertet.
+
+Tandoor hat dafür kein eigenes Feld, es mittelt die Noten im Kochprotokoll. `plan rate` hält
+deshalb genau einen Eintrag je Rezept vor und ändert ihn, statt einen zweiten anzulegen. Die Datei
+ist die Quelle: wer in Tandoors Oberfläche bewertet, verzieht den Durchschnitt.

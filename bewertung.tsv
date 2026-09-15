@@ -1,0 +1,88 @@
+# Grundbewertung der Rezepte. Nur die erste Spalte ausfüllen.
+#
+#   5  geht quasi immer
+#   4  sehr gut, aber nicht jede Woche
+#   3  kann man mal essen, nur wenn es lange her ist
+#   2  eigentlich nicht gut
+#   1  nie
+#   0  nicht bewertet, bleibt so
+#
+# Spalten: sterne, id, name, schlagworte, beschreibung. Tab oder Leerzeichen, beides geht.
+# Gelesen werden nur sterne und id, der Rest der Zeile ist Gedaechtnisstuetze.
+
+# --- Gerichte ---
+0	81	Brot - High Protein                            		
+4	25	Brotsalat                                      	Hauptspeise, Fisch, Abendessen, Salat	Salat mit einer Mischung aus Tomaten, Gurken, Tunfisch, grünen Salat …
+2	51	Bunter Gemüseauflauf                           	Hauptspeise, Vegetarisch, Kartoffeln, Abendessen	
+3	32	Burger                                         	Fleisch, Abendessen	Leckere Burger ganz einfach zu Hause zubereitet! Saftiges Rindfleisch…
+4	29	Burgerbaguette                                 	Rind, Fleisch, Abendessen	Baguette im Burger-Stil mit Rinderhackfleisch
+4	58	Butter Chicken Veggie                          	Hauptspeise, Mealprep, Vegetarisch, Abendessen	
+3	31	Cannelloni mit Ricotta und Spinat              	Nudeln, Hauptspeise, Vegetarisch	Cannelloni mit Ricotta und Spinat
+3	1	Chicken Alfredo                                	Nudeln, Hähnchen, Hauptspeise, Mealprep	Chicken-Alfredo-Rezept
+2	3	Chili con Carne                                	Hauptspeise, Mealprep, Rind, Fleisch	Chili con Carne - Grundrezept
+1	55	Cremige Avocado-Pasta mit Kirschtomaten        	Nudeln, Hauptspeise, Vegetarisch	
+3	43	Crispy-Chickenburger                           	Hähnchen, Hauptspeise, Fleisch, Abendessen	Crispy-Chickenburger mit Cornflakes-Panade – außen knusprig, innen sa…
+3	40	Döner                                          	Hauptspeise, Vegetarisch, Abendessen	Döner mit Räuchertofu
+3	38	Einfache Tomatensuppe                          	Vegetarisch, Abendessen	
+3	37	Einfacher Flammkuchen – selber machen          	Backen, Fleisch, Abendessen	Einfacher Flammkuchen Elsässer Art
+5	36	Fladenbrot mit Tomaten und Mozzarella          	Vegetarisch, Abendessen	Fladenbrot mit Tomaten und Mozzarella
+3	46	Fried Noodles                                  	Nudeln, Hauptspeise, Vegetarisch, Abendessen	
+4	45	Fried Rice                                     	Hauptspeise, Vegetarisch, Reis, Abendessen	
+2	49	gefüllte Zucchini                              	Vegetarisch, Abendessen	
+1	41	Gnocchi Auflauf mit Tomaten und Mozzarella     	Hauptspeise, Vegetarisch, Abendessen	
+5	20	griechischer Salat                             	Hauptspeise, Vegetarisch, Abendessen	
+2	17	Gulaschsuppe ungarischer Art                   	Hauptspeise, Mealprep, Fleisch, Kartoffeln, Suppe	Gulaschsuppe mit Rindfleisch, Kartoffeln und Karotten
+4	47	Handkäs mit Musik                              	Hauptspeise, Vegetarisch, Abendessen	
+4	13	Hähnchenbowl                                   	Hähnchen, Hauptspeise, Mealprep, Fleisch	Bowl mit Hähnchen, Reis & Salat
+3	42	Kartoffelbrei                                  	Kartoffeln	
+2	18	Kartoffelgratin                                	Hauptspeise, Mealprep, Vegetarisch	Kartoffelgratin mit Kaisergemüse und Speck
+1	15	Klassisches Rindergulasch                      	Fleisch	
+2	67	Knuspriger Nudel Caesar-Salat                  	Mealprep, Vegetarisch, Abendessen, Salat	
+4	12	Kokos-Curry                                    	Hauptspeise, Mealprep	Reis mit einer cremigen Kokos-Curry Soße
+4	21	Käsespätzle mit Röstzwiebeln                   	Hauptspeise, Vegetarisch, Abendessen	
+3	23	Lachsnudeln                                    	Nudeln, Hauptspeise, Mealprep, Fisch	One Pot Lachsnudeln
+3	11	Lasagne vegetarisch                            	Hauptspeise, Vegetarisch	klassische Lasagne mit Sojagranulat und Bechamel
+4	22	Lasagnesuppe vegetarisch                       	Nudeln, Hauptspeise, Mealprep, Vegetarisch	
+0	53	Luftige Vollkornbrötchen                       	emmi, emmikochteinfach.de	
+1	77	Moussaka                                       	Backen, Hauptspeise, Mealprep, Vegetarisch, Kartoffeln	Der Auflauf aus dem Ofen mit Kartoffeln, Auberginen, Hackfleisch (Soj…
+4	10	Nudeln Bolognese vegetarisch                   	Nudeln, Hauptspeise, Mealprep, Vegetarisch	Nudeln Bolognese vegetarisch
+3	14	Nudeln mit Gemüsetomatensoße und Thunfisch     	Nudeln, Hauptspeise, Mealprep, Vegetarisch	
+1	8	Nudeln mit Hackfleischsoße                     	Nudeln, Hauptspeise, Mealprep, Fleisch	Nudeln mit Hackfleischsoße
+4	19	Nudelsalat mit Pesto und Thunfisch             	Nudeln, Hauptspeise, Mealprep, Fisch	frischer Nudelsalat mit Thunfisch, Tomaten und Mozzarella
+1	39	Pelmeni                                        	Fleisch, Abendessen, Schnell	
+5	27	Pizza Tonno                                    		Selbstgemachte Pizza mit Tomatensoße, Thunfisch und Mozzarella
+5	28	Pizzaschnecken                                 	Vegetarisch, Abendessen	Pizzaschnecken Margherita
+4	57	Quesadillas                                    	Hauptspeise, Vegetarisch, Abendessen	
+1	16	Rindergulasch mit Reis                         	Hauptspeise, Mealprep, Fleisch, Reis	
+1	48	Schweinemedaillons in Pfefferrahmsoße          	Hauptspeise, Fleisch, Abendessen, Wochenende	
+2	30	Spaghetti Carbonara                            	Abendessen	
+3	34	Spargelrisotto mit grünem Spargel              	Vegetarisch, Abendessen	Risotto mit grünem Spargel ist garantiert köstlich, familientauglich …
+3	78	Tortellini-Auflauf mit Schinken-Käse-Sahne-Soße	Hauptspeise, Vegetarisch, Abendessen	Tortellini-Auflauf mit Schinken-Käse-Sahne-Soße ist perfekt für deine…
+0	35	Wraps                                          		
+2	50	Wraps mit Thunfisch                            	Hauptspeise, Mealprep, Fisch, Abendessen
+5   82  Wraps mit Tofu	
+
+# --- Bausteine: Beilagen, Nachtisch, Sossen. Stehen nie allein auf einem Platz ---
+0	6	Bechamelsauce               	Soßen, Basisrezepte	Bechamelsauce – einfaches Grundrezept
+0	4	Bolognese Soße              	Rind, Fleisch, Basisrezepte	Grundrezept für Hackfleischsoße
+0	5	Bolognese vegetarisch       	Basisrezepte, Vegetarisch	Vegetarische Bolognese aus Sojagranulat
+0	72	Brownie Balls               	Süß, Nachtisch	High Protein Salted Brownie Balls
+0	33	Burger-Sauce                	Soßen, Basisrezepte	
+0	71	Cookie Dough                	Süß, Nachtisch	
+0	73	Frozen Yoghurt              	Süß, Nachtisch	
+0	74	Frozen Yoghurt Bark         	Süß, Nachtisch	
+0	75	Greek Yoghurt Brownie Batter	Süß, Nachtisch	
+5	52	grüner Salat mit Soße       	Vegetarisch, Abendessen, Beilage	
+0	56	Kaiserschmarrn              	Backen, Süß, Nachtisch, Vegetarisch	ganz klassisch
+0	68	Knusprige Ofenkartoffeln    	Backen, Vegetarisch, Beilage	Knusprige Ofenkartoffeln
+0	2	Käsekuchen                  	Kuchen, Backen, Süß, Nachtisch	Unser Rezept für einen klassischen Käsekuchen. Mit Boden
+0	7	Lasagne mit Hackfleisch     	Fleisch, Basisrezepte	klassische Lasagne mit Hackfleischsoße und Bechamel
+0	76	Lava Cake High Protein      	Süß, Nachtisch	
+0	59	Naan                        	Vegetarisch, Abendessen, Beilage	
+0	79	Nutella                     	Süß, Nachtisch	
+5	26	Pizzateig                   	Basisrezepte	Basisrezept für selbstgemachten Pizzateig
+5	24	Salatsoße                   	Basisrezepte	klassische Salatsoße mit Schmand oder Joghurt
+0	70	Schoko-Himbeer Riegel       	Süß, Nachtisch	High Protein Himbeer Brownie Riegel
+0	69	Schoko-Mousse               	Backen, Süß, Nachtisch	Mousse au Chocolat avec Tofu
+0	80	Snickers Mini               	Süß, Nachtisch	
+4	44	Tofu-Nuggets                	Vegetarisch, Beilage	

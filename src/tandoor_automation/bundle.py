@@ -9,6 +9,9 @@ from tandoor_automation.models import MealType, PlannedMeal, Recipe
 from tandoor_automation.tandoor import TandoorClient
 
 HISTORY_WEEKS = 8
+SPILLOVER = timedelta(days=1)
+"""So weit darf ein Eintrag der Woche über sie hinausragen: das Abendessen vom Sonntag wird für
+Sonntag und den Montag danach gekocht."""
 WEEK_PATTERN = re.compile(r"^(\d{4})-W(\d{2})$")
 
 
@@ -17,6 +20,10 @@ class PlanBundle(BaseModel):
 
     `occupied` und `history` sind dieselbe Sorte Eintrag, nur in verschiedenen Zeiträumen:
     `occupied` belegt Plätze in der Zielwoche, `history` sagt, was zuletzt auf dem Tisch stand.
+
+    `occupied` reicht einen Tag über die Woche hinaus, denn so weit reicht auch das Abendessen vom
+    Sonntag. Ohne diesen Tag sähe ein zweiter Lauf von `plan apply` seinen eigenen Sonntagseintrag
+    nicht und legte ihn ein zweites Mal an.
     """
 
     week: str
@@ -101,7 +108,7 @@ def build_bundle(tandoor: TandoorClient, week: str) -> PlanBundle:
         Das fertige Bündel.
     """
     days = week_days(week)
-    start, end = days[0], days[-1]
+    start, end = days[0], days[-1] + SPILLOVER
     meals = tandoor.meal_plan(start - timedelta(weeks=HISTORY_WEEKS), end)
     return PlanBundle(
         week=week,
