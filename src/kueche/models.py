@@ -3,30 +3,44 @@
 Tandoor liefert an jedem Rezept die vollständigen Nährwerte jeder Zutat mit, rund 45 KB pro
 Rezept. Die Modelle hier greifen nur die Felder heraus, die für die Wahl eines Gerichts zählen;
 alles andere verwirft Pydantic beim Parsen.
+
+Zwei Felder heißen hier anders als in der API. Sie tragen deshalb `AliasChoices` und nehmen beide
+Schreibweisen an, denn dieselben Modelle lesen einmal Tandoors Antwort und einmal das Bündel, das
+aus ihnen geschrieben wurde.
 """
 
 from datetime import datetime, time
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import AliasChoices, BaseModel, Field, field_validator
 
 
 class Recipe(BaseModel):
-    """Ein Rezept aus `/api/recipe/`, reduziert auf Aufwand, Schlagworte und Kochhistorie."""
+    """Ein Rezept aus `/api/recipe/`, reduziert auf Aufwand, Schlagworte und Kurzbeschreibung.
+
+    `rating` und `last_cooked` fehlen mit Absicht: Tandoor liefert beide an jedem Rezept leer, weil
+    hier niemand bewertet und kein Kochtagebuch geführt wird. Wann ein Gericht zuletzt auf dem
+    Tisch stand, sagt die Planhistorie im Bündel ohnehin genauer.
+    """
 
     id: int
     name: str
+    description: str = ""
     keywords: list[str] = Field(default_factory=list)
     working_time: int
     waiting_time: int
     servings: int
-    rating: float | None = None
-    last_cooked: datetime | None = None
+
+    @field_validator("description", mode="before")
+    @classmethod
+    def _no_none(cls, value: str | None) -> str:
+        """Macht aus der fehlenden Beschreibung eine leere, die Hälfte der Rezepte hat keine."""
+        return value or ""
 
     @field_validator("keywords", mode="before")
     @classmethod
-    def _labels_only(cls, value: list[dict[str, str]]) -> list[str]:
+    def _labels_only(cls, value: list[dict[str, str] | str]) -> list[str]:
         """Ersetzt die Schlagwort-Objekte durch ihre Anzeigenamen."""
-        return [keyword["label"] for keyword in value]
+        return [keyword["label"] if isinstance(keyword, dict) else keyword for keyword in value]
 
 
 class PlannedMeal(BaseModel):
@@ -44,7 +58,9 @@ class PlannedMeal(BaseModel):
     from_date: datetime
     to_date: datetime
     meal_type_name: str
-    recipe_id: int | None = Field(default=None, validation_alias="recipe")
+    recipe_id: int | None = Field(
+        default=None, validation_alias=AliasChoices("recipe", "recipe_id")
+    )
     recipe_name: str = ""
     servings: float
 
@@ -65,4 +81,4 @@ class MealType(BaseModel):
 
     id: int
     name: str
-    served_at: time | None = Field(default=None, validation_alias="time")
+    served_at: time | None = Field(default=None, validation_alias=AliasChoices("time", "served_at"))

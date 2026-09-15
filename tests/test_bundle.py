@@ -1,4 +1,4 @@
-"""Woche zu Tagen und Überschneidung von Planeinträgen.
+"""Woche zu Tagen, Überschneidung von Planeinträgen und die Lesbarkeit des Bündels.
 
 Beides scheitert still: eine falsch gerechnete Woche plant sieben richtige Gerichte auf die
 falschen Tage, und eine übersehene Überschneidung überschreibt einen belegten Platz.
@@ -8,8 +8,8 @@ from datetime import date
 
 import pytest
 
-from kueche.bundle import next_week, overlaps, parse_week, week_days
-from kueche.models import PlannedMeal
+from kueche.bundle import PlanBundle, next_week, overlaps, parse_week, week_days
+from kueche.models import MealType, PlannedMeal, Recipe
 
 
 def meal(from_date: str, to_date: str) -> PlannedMeal:
@@ -61,3 +61,44 @@ def test_eintrag_umschliesst_die_woche():
 )
 def test_eintrag_daneben_ragt_nicht_hinein(from_date, to_date):
     assert not overlaps(meal(from_date, to_date), date(2026, 9, 14), date(2026, 9, 20))
+
+
+def test_buendel_liest_sich_selbst_wieder_ein() -> None:
+    """Die Modelle müssen beide Formen lesen, Tandoors Antwort und das daraus geschriebene Bündel.
+
+    Fällt das auseinander, schreibt `plan bundle` eine Datei, die `plan check` nicht mehr öffnen
+    kann, und der Fehler fällt erst am Donnerstag beim Planen auf.
+    """
+    aus_tandoor = PlanBundle(
+        week="2026-W39",
+        days=[date(2026, 9, day) for day in range(21, 28)],
+        meal_types=[MealType.model_validate({"id": 1, "name": "Mittagessen", "time": "12:00:00"})],
+        occupied=[],
+        history=[
+            PlannedMeal.model_validate(
+                {
+                    "id": 1,
+                    "from_date": "2026-09-14T12:00:00+02:00",
+                    "to_date": "2026-09-18T12:00:00+02:00",
+                    "meal_type_name": "Mittagessen",
+                    "recipe": {"id": 11},
+                    "recipe_name": "Lasagne vegetarisch",
+                    "servings": 5,
+                }
+            )
+        ],
+        recipes=[
+            Recipe.model_validate(
+                {
+                    "id": 11,
+                    "name": "Lasagne vegetarisch",
+                    "description": None,
+                    "keywords": [{"label": "Vegetarisch"}],
+                    "working_time": 30,
+                    "waiting_time": 35,
+                    "servings": 5,
+                }
+            )
+        ],
+    )
+    assert PlanBundle.model_validate_json(aus_tandoor.model_dump_json()) == aus_tandoor
