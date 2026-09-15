@@ -5,7 +5,7 @@ Rezept. Die Modelle hier greifen nur die Felder heraus, die für die Wahl eines 
 alles andere verwirft Pydantic beim Parsen.
 """
 
-from datetime import datetime
+from datetime import datetime, time
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -53,3 +53,16 @@ class PlannedMeal(BaseModel):
     def _recipe_id(cls, value: dict[str, int] | int | None) -> int | None:
         """Zieht die ID aus dem eingebetteten Rezept, falls eines am Eintrag hängt."""
         return value["id"] if isinstance(value, dict) else value
+
+
+class MealType(BaseModel):
+    """Eine Mahlzeit des Tages aus `/api/meal-type/`.
+
+    `served_at` heißt in der API `time` und ist die Uhrzeit, die Tandoor an jeden Planeintrag
+    dieser Mahlzeit schreibt. Der abweichende Name ist nötig, weil ein Feld `time` seine eigene
+    Typannotation verdeckt.
+    """
+
+    id: int
+    name: str
+    served_at: time | None = Field(default=None, validation_alias="time")

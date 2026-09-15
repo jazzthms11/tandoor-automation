@@ -9,6 +9,9 @@ dependencies = [
     "pydantic-settings==2.15.0",
 ]
 
+[project.scripts]
+plan = "kueche.cli:main"
+
 [dependency-groups]
 dev = [
     "pytest==9.1.1",

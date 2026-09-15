@@ -7,7 +7,7 @@ from types import TracebackType
 import httpx
 
 from kueche.config import Settings
-from kueche.models import PlannedMeal, Recipe
+from kueche.models import MealType, PlannedMeal, Recipe
 
 PAGE_SIZE = 100
 TIMEOUT_SECONDS = 30
@@ -59,6 +59,17 @@ class TandoorClient:
             Alle Rezepte, nach Namen sortiert.
         """
         return [Recipe.model_validate(item) for item in self._pages("/api/recipe/", {})]
+
+    def meal_types(self) -> list[MealType]:
+        """Holt die Mahlzeiten des Tages, nach Uhrzeit sortiert.
+
+        Returns:
+            Alle in Tandoor angelegten Mahlzeitentypen.
+        """
+        types = [MealType.model_validate(item) for item in self._pages("/api/meal-type/", {})]
+        return sorted(
+            types, key=lambda meal_type: (meal_type.served_at is None, meal_type.served_at)
+        )
 
     def meal_plan(self, start: date, end: date) -> list[PlannedMeal]:
         """Holt die Planeinträge eines Zeitraums.
