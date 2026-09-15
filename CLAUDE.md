@@ -1,4 +1,4 @@
-# kueche
+# tandoor-automation
 
 Automatisiert die Kette Wochenplan, Einkaufsliste, Lebensmittelbestand gegen die API von
 Tandoor. Das Vorhaben und seine Begründungen stehen im Vault unter

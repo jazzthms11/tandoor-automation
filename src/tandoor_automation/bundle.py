@@ -5,8 +5,8 @@ from datetime import date, timedelta
 
 from pydantic import BaseModel
 
-from kueche.models import MealType, PlannedMeal, Recipe
-from kueche.tandoor import TandoorClient
+from tandoor_automation.models import MealType, PlannedMeal, Recipe
+from tandoor_automation.tandoor import TandoorClient
 
 HISTORY_WEEKS = 8
 WEEK_PATTERN = re.compile(r"^(\d{4})-W(\d{2})$")

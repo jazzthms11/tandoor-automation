@@ -8,8 +8,8 @@ from datetime import date
 
 import pytest
 
-from kueche.bundle import PlanBundle, next_week, overlaps, parse_week, week_days
-from kueche.models import MealType, PlannedMeal, Recipe
+from tandoor_automation.bundle import PlanBundle, next_week, overlaps, parse_week, week_days
+from tandoor_automation.models import MealType, PlannedMeal, Recipe
 
 
 def meal(from_date: str, to_date: str) -> PlannedMeal:

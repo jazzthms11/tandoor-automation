@@ -1,4 +1,4 @@
-# kueche
+# tandoor-automation
 
 Wochenplan und Lebensmittelbestand in [Tandoor](https://tandoor.dev) automatisieren.
 

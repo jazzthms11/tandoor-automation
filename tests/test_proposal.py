@@ -9,9 +9,9 @@ from datetime import date, datetime
 
 import pytest
 
-from kueche.bundle import PlanBundle
-from kueche.models import MealType, PlannedMeal, Recipe
-from kueche.proposal import Proposal, ProposalEntry, validate_proposal
+from tandoor_automation.bundle import PlanBundle
+from tandoor_automation.models import MealType, PlannedMeal, Recipe
+from tandoor_automation.proposal import Proposal, ProposalEntry, validate_proposal
 
 MITTAG, ABEND = 1, 2
 NAMEN = {
@@ -170,3 +170,25 @@ def test_fehlender_platz_faellt_auf() -> None:
     del proposal.entries[3]
     problems = validate_proposal(proposal, _bundle())
     assert problems == ["2026-09-27 Mittagessen: 0.0 statt 2 Portionen"]
+
+
+def test_termin_ohne_rezept_belegt_den_platz() -> None:
+    proposal = _proposal()
+    proposal.entries[6] = ProposalEntry(
+        title="Besuch bei Anna",
+        meal_type_id=ABEND,
+        from_date=date(2026, 9, 26),
+        to_date=date(2026, 9, 26),
+    )
+    assert validate_proposal(proposal, _bundle()) == []
+
+
+def test_eintrag_ohne_rezept_und_ohne_titel() -> None:
+    proposal = _proposal()
+    proposal.entries[6] = ProposalEntry(
+        meal_type_id=ABEND,
+        from_date=date(2026, 9, 26),
+        to_date=date(2026, 9, 26),
+    )
+    problems = validate_proposal(proposal, _bundle())
+    assert any("weder Rezept noch Titel" in problem for problem in problems)

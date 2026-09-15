@@ -6,8 +6,8 @@ from types import TracebackType
 
 import httpx
 
-from kueche.config import Settings
-from kueche.models import MealType, PlannedMeal, Recipe
+from tandoor_automation.config import Settings
+from tandoor_automation.models import MealType, PlannedMeal, Recipe
 
 PAGE_SIZE = 100
 TIMEOUT_SECONDS = 30

@@ -118,6 +118,18 @@ deshalb nur vor, wenn Leo von sich aus sagt, dass die Woche eng wird, und schrei
 }
 ```
 
+Ein Platz, an dem nicht selbst gekocht wird, kommt ohne Rezept aus und trägt nur einen Titel. So
+steht er später auch in Tandoor:
+
+```json
+{
+  "title": "Besuch bei Anna",
+  "meal_type_id": 2,
+  "from_date": "2026-09-26",
+  "to_date": "2026-09-26"
+}
+```
+
 `meal_type_id` steht im Bündel unter `meal_types`, üblicherweise 1 für Mittagessen und 2 für
 Abendessen. Die Daten sind reine Tage ohne Uhrzeit, die Uhrzeit setzt später `plan apply` aus der
 Mahlzeit ein. `recipe_name` muss genau der Name aus dem Bündel sein, er ist die Sicherung gegen
@@ -127,7 +139,8 @@ eine vertauschte ID. `note` darf leer bleiben.
 
 `plan check` prüft, ob es das Rezept und die Mahlzeit gibt, ob Name und ID zusammenpassen, ob der
 Zeitraum in der Woche liegt, ob ein belegter Platz überschrieben würde und ob an jedem Tag für
-beide Mahlzeiten mindestens zwei Portionen eingeplant sind.
+beide Mahlzeiten mindestens zwei Portionen eingeplant sind. Ein Eintrag ohne Rezept zählt dabei
+als versorgt und braucht keine Portionen, muss aber einen Titel tragen.
 
 Alles andere prüfst du selbst, bevor du Leo den Plan zeigst: vegetarisch, Eiweiß, die Mischung aus
 Reis und Nudeln, die Abwechslung gegen die Historie und der Aufwand an den Kochtagen.
@@ -149,3 +162,20 @@ dass die Wahl misslungen war.
 
 Sagt Leo, so passe es: Der Plan steht in `vorschlag/<woche>.json` und muss von Hand in Tandoor
 eingetragen werden, solange es `plan apply` nicht gibt. Sag das dazu, statt es zu verschweigen.
+
+## Hinweise beim Aufruf
+
+Der Skill lässt sich mit einem Zusatz starten, etwa `/wochenplan dieses Wochenende wenig Zeit` oder
+`/wochenplan W41, Samstag Besuch`. Ein solcher Hinweis gilt vor den Regeln oben. Er beschreibt den
+Fall dieser Woche, und die Regeln beschreiben nur den Normalfall.
+
+- **Eine Woche** (`W41`, `übernächste Woche`) → `plan bundle --week` entsprechend aufrufen
+- **Wenig Zeit an einem Kochtag** → dort Rezepte mit kurzer `working_time`, und am Wochenende darf
+  eine Frosterportion einspringen
+- **Ein Wunschgericht** → fest einplanen und den Rest darum herum wählen
+- **Etwas muss weg**, Reste oder eine offene Packung → als `note` an den passenden Eintrag
+- **Ein Platz fällt aus**, Besuch oder auswärts essen → trag einen Eintrag ohne Rezept ein, nur
+  mit `title`, und stopf den Platz nicht mit einem Gericht, das niemand isst
+
+Widerspricht ein Hinweis einer Regel, folg dem Hinweis und sag in einem Satz, welche Regel dafür
+weichen musste.

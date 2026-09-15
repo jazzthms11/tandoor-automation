@@ -4,10 +4,10 @@ import argparse
 from datetime import date
 from pathlib import Path
 
-from kueche.bundle import PlanBundle, build_bundle, next_week, parse_week
-from kueche.config import Settings
-from kueche.proposal import Proposal, validate_proposal
-from kueche.tandoor import TandoorClient
+from tandoor_automation.bundle import PlanBundle, build_bundle, next_week, parse_week
+from tandoor_automation.config import Settings
+from tandoor_automation.proposal import Proposal, validate_proposal
+from tandoor_automation.tandoor import TandoorClient
 
 BUNDLE_DIR = Path("bundle")
 
