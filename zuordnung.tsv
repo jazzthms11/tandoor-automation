@@ -44,10 +44,10 @@
 -	Backofenfo' '0455981	-						1
 238	Backpulver		Backpulver					2
 391	Bad Reichen. Jodsalz	Salz						4
-338	Baguette		Weißbrot					4
-338	Baguette Bauern		Weißbrot					7
+617	Baguette		Baguette					4
+617	Baguette Bauern		Baguette					7
 531	Baguette Brötch. 4er	Brötchen					1
-338	Baguette Körner		Weißbrot					1
+617	Baguette Körner		Baguette					1
 339	Balance Brot		Brot						1
 41	Balsamico Modena	Essig Balsamico					1
 26	Banane lose		Banane						30
@@ -57,7 +57,7 @@
 58	Barilla Penne Rigate	Nudeln						1
 253	Barilla Pesto Rucola	Pesto						1
 349	Basmati Reis		Basmatireis					13
-338	Bauernbaguette		Weißbrot					12
+617	Bauernbaguette		Baguette					12
 339	Bauernkruste		Brot						14
 -	Beeren-Teller		-						1
 -	Ben&Jerry's FudgeBro	-						1
@@ -112,7 +112,7 @@
 527	Bitburger Herb 0%	Bier						33
 502	Bitter Aperitiv 11%	Aperol						3
 -	Blattgelatine		-						1
-158	Blätterteig		Blätterteig, gefroren				4
+158	Blätterteig		Blätterteig					4
 170	Blütenhonig		Honig						1
 -	Bratkartoffeln		-						1
 -	Bresaola		-						1
@@ -193,8 +193,8 @@
 578	Edelsalami mit Rind	Wurst						1
 586	Edelschoko Arriba85%	Zartbitterschokolade				1
 586	Edelschokolade 90%	Zartbitterschokolade				1
--	Ehrm.H.P.Double Choc	-						2
--	Ehrmann High Prot.Pu	-						7
+618	Ehrm.H.P.Double Choc	Proteinpudding					2
+618	Ehrmann High Prot.Pu	Proteinpudding					7
 -	Ehrmann HP.Dr.Choco	-						1
 239	Eier 10er Freilandh.	Ei (M)						35
 239	Eier 10er OKT		Ei (M)						7
@@ -241,7 +241,7 @@
 -	Fix Nud./Schi.gratin	-						1
 480	Fladenbrot Som.		Fladenbrot					29
 42	Flüss. Pflanzencreme	Kochsahne					1
--	Freshona Rahmspinat	-						2
+619	Freshona Rahmspinat	Rahmspinat					2
 508	Frisch.Schweinefilet	Schweinefilet					1
 239	Frische Eier		Ei (M)						1
 214	Frischer Orangensaft	Orangensaft					1
@@ -270,7 +270,7 @@
 -	Geschirrreininger	-						1
 -	Geschirrsp. Blau	-						1
 -	Gest. Eis Schwarzw.K	-						1
--	Getr. Früchte Mango	-						3
+620	Getr. Früchte Mango	Mangostreifen getrocknet			3
 -	Giov.Rana Rav.Ricott	-						2
 45	Giovanni Ferr.Padano	Parmesan					2
 490	Gnocchi			Gnocchi						8
@@ -320,9 +320,9 @@
 96	Heidelbeere		Blaubeeren					4
 96	Heidelbeeren		Blaubeeren					3
 41	Hengstenberg Balsam.	Essig Balsamico					1
--	High Prot. Haselnuss	-						1
--	High Prot.Pud.Schoko	-						2
--	High Prot.Pudd.Schok	-						1
+618	High Prot. Haselnuss	Proteinpudding					1
+618	High Prot.Pud.Schoko	Proteinpudding					2
+618	High Prot.Pudd.Schok	Proteinpudding					1
 490	Hilcona Tor.Gnocchi	Gnocchi						1
 526	Hilcona Tort.Spinat	Tortellini					1
 112	Himbeeren		Himbeeren					14
@@ -342,7 +342,7 @@
 10	Hähnchenbrust Natur	Hähnchenbrust					1
 10	Hähnchenbrustfilet	Hähnchenbrust					2
 -	Iglo Gartenkräuter	-						1
--	iglo Rahmspinat		-						1
+619	iglo Rahmspinat		Rahmspinat					1
 115	Ingwer Bio		Ingwer						1
 15	Islos Feta		Feta						1
 -	Islos Ziegenkäse	-						1
@@ -412,7 +412,7 @@
 23	Kör.Frischk.300g 10%	körniger Frischkäse				1
 23	Kör.Frischk.300g 20%	körniger Frischkäse				6
 23	Körn. Frischkäse	körniger Frischkäse				1
-338	Körnerbaguette		Weißbrot					1
+617	Körnerbaguette		Baguette					1
 23	Körnig.Frischkäse20%	körniger Frischkäse				5
 23	Körniger Frisch		körniger Frischkäse				1
 23	Körniger Frischkäse	körniger Frischkäse				16
@@ -467,7 +467,7 @@
 432	Mozzarella gerieben	Mozzarella					23
 331	Mozzarella light	Fettreduzierter Mozzarella			35
 331	Mozzarella Light	Fettreduzierter Mozzarella			2
-1	MSC Thunfischst.i.So	Tunfisch					1
+1	MSC Thunfischst.i.So	Thunfisch					1
 242	MSC Wildlachsfilets	Lachsfilet					3
 -	Muffins hell		-						1
 -	Mulino BiancoChicche	-						1
@@ -551,10 +551,10 @@
 527	Premium Pils 4,9%	Bier						1
 364	Prosciutto cotto	Schinken					1
 364	Prosciutto Crudo	Schinken					1
--	Prot.Pudd.Haselnuss	-						1
--	Prot.PuddingPistazie	-						1
--	Protein Pudd.Schoko	-						6
--	Protein Pudd.Vanille	-						1
+618	Prot.Pudd.Haselnuss	Proteinpudding					1
+618	Prot.PuddingPistazie	Proteinpudding					1
+618	Protein Pudd.Schoko	Proteinpudding					6
+618	Protein Pudd.Vanille	Proteinpudding					1
 -	ProteinMix Nüsse&Soj	-						2
 405	Puddingpulver Vanil.	Vanillepuddingpulver				2
 376	QS Rinderhack 18%	Rinderhack					3
@@ -676,10 +676,10 @@
 -	Teekanne Heißer Hugo	-						1
 -	Teekanne Waldbeere	-						1
 -	TeekanneKleine Sünde	-						1
-1	Thunfisch i. e. Saft	Tunfisch					1
-1	Thunfisch i.e. Saft	Tunfisch					5
--	Thunfischsteak		-						23
--	Thunfischsteak Sonn.	-						15
+1	Thunfisch i. e. Saft	Thunfisch					1
+1	Thunfisch i.e. Saft	Thunfisch					5
+1	Thunfischsteak		Thunfisch					23
+1	Thunfischsteak Sonn.	Thunfisch					15
 472	Tilsiter Scheiben	Käse						1
 -	Tiramisu		-						2
 -	Tiramisù Löffelbisc.	-						1
