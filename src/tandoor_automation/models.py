@@ -11,7 +11,7 @@ aus ihnen geschrieben wurde.
 
 from datetime import datetime, time
 
-from pydantic import AliasChoices, BaseModel, Field, field_validator
+from pydantic import AliasChoices, AliasPath, BaseModel, Field, field_validator
 
 
 class Recipe(BaseModel):
@@ -121,3 +121,16 @@ class CookLog(BaseModel):
     def _user_id(cls, value: dict[str, int] | int) -> int:
         """Zieht die ID aus dem eingebetteten Benutzer."""
         return value["id"] if isinstance(value, dict) else value
+
+
+class Food(BaseModel):
+    """Ein Lebensmittel aus `/api/food/`, reduziert auf das, was eine Zuordnung entscheidbar macht.
+
+    Die Kategorie steht in der Antwort verschachtelt und fehlt bei elf Lebensmitteln ganz. Sie
+    trennt die Gleichnamigen: `Mozzarella` steht unter Molkereiprodukte, der fettreduzierte unter
+    Käse.
+    """
+
+    id: int
+    name: str
+    category: str = Field(default="", validation_alias=AliasPath("supermarket_category", "name"))

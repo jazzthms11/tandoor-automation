@@ -3,9 +3,11 @@
 import argparse
 import json
 import re
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from tandoor_automation.config import Settings
 from tandoor_automation.lidl import (
     TOKEN_FILE,
     LidlAuthError,
@@ -13,6 +15,9 @@ from tandoor_automation.lidl import (
     login_url,
     redeem,
 )
+from tandoor_automation.mapping import MAPPING_FILE, merge, parse_mapping, problems, render
+from tandoor_automation.receipts import parse_lidl
+from tandoor_automation.tandoor import TandoorClient
 
 BONS_DIR = Path("bons/lidl")
 UNKNOWN_DATE = "ohne-datum"
@@ -87,6 +92,47 @@ def _run_fetch(dry_run: bool) -> None:
     print(f"{fetched} neue Bons, {len(known)} lagen schon vor")
 
 
+def _receipt_names() -> Counter[str]:
+    """Zählt, wie oft jeder Artikelname über alle abgelegten Bons hinweg vorkommt."""
+    counts: Counter[str] = Counter()
+    for path in sorted(BONS_DIR.glob("*.json")):
+        receipt = parse_lidl(json.loads(path.read_text(encoding="utf-8")))
+        counts.update(item.name for item in receipt.items)
+    return counts
+
+
+def _run_map(catalogue: bool) -> None:
+    """Bringt die Zuordnung auf den Stand der Bons und prüft sie gegen Tandoor.
+
+    Geschrieben wird die Datei immer, auch wenn Mängel gefunden wurden: die Mängel stecken in der
+    ersten Spalte, und die bleibt beim Schreiben unangetastet.
+
+    Args:
+        catalogue: Statt der Zuordnung die Lebensmittel aus Tandoor ausgeben.
+    """
+    with TandoorClient(Settings()) as tandoor:
+        foods = tandoor.foods()
+    if catalogue:
+        for food in foods:
+            print(f"{food.id}\t{food.name}\t{food.category}")
+        return
+    known = parse_mapping(MAPPING_FILE.read_text(encoding="utf-8")) if MAPPING_FILE.exists() else []
+    entries = merge(known, _receipt_names())
+    names = {food.id: food.name for food in foods}
+    MAPPING_FILE.write_text(render(entries, names), encoding="utf-8")
+    open_names = [entry.receipt_name for entry in entries if not entry.decided]
+    discarded = sum(1 for entry in entries if entry.discarded)
+    print(
+        f"{MAPPING_FILE}: {len(entries)} Namen, {len(entries) - len(open_names) - discarded} "
+        f"zugeordnet, {discarded} verworfen, {len(open_names)} offen"
+    )
+    found = problems(entries, names)
+    for problem in found:
+        print(problem)
+    if found:
+        raise SystemExit(1)
+
+
 def main() -> None:
     """Liest die Kommandozeile und führt den gewählten Befehl aus."""
     parser = argparse.ArgumentParser(prog="bon", description="Kassenbons für den Bestand")
@@ -94,10 +140,18 @@ def main() -> None:
     commands.add_parser("login", help="Einmalig den Zugang zu Lidl Plus herstellen")
     fetch = commands.add_parser("fetch", help="Bons aus Lidl Plus holen, die noch fehlen")
     fetch.add_argument("--dry-run", action="store_true", help="Nur zeigen, was geholt würde")
+    mapping = commands.add_parser("map", help=f"Bonnamen in {MAPPING_FILE} zuordnen")
+    mapping.add_argument(
+        "--katalog",
+        action="store_true",
+        help="Statt der Zuordnung die Lebensmittel aus Tandoor ausgeben",
+    )
     args = parser.parse_args()
     try:
         if args.command == "login":
             _run_login()
+        elif args.command == "map":
+            _run_map(args.katalog)
         else:
             _run_fetch(args.dry_run)
     except LidlAuthError as problem:

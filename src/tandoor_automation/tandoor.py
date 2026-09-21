@@ -1,4 +1,4 @@
-"""Zugriff auf die Tandoor-API: Rezepte und Plan lesen, Planeinträge anlegen."""
+"""Zugriff auf die Tandoor-API: Rezepte, Lebensmittel und Plan lesen, Planeinträge anlegen."""
 
 from collections.abc import Iterator
 from datetime import date
@@ -7,7 +7,7 @@ from types import TracebackType
 import httpx
 
 from tandoor_automation.config import Settings
-from tandoor_automation.models import CookLog, MealType, PlannedMeal, Recipe
+from tandoor_automation.models import CookLog, Food, MealType, PlannedMeal, Recipe
 
 PAGE_SIZE = 100
 TIMEOUT_SECONDS = 30
@@ -172,6 +172,14 @@ class TandoorClient:
         response = self._client.post("/api/meal-plan/", json=body)
         response.raise_for_status()
         return PlannedMeal.model_validate(response.json())
+
+    def foods(self) -> list[Food]:
+        """Holt alle Lebensmittel der Instanz.
+
+        Returns:
+            Alle Lebensmittel, nach Namen sortiert.
+        """
+        return [Food.model_validate(item) for item in self._pages("/api/food/", {})]
 
     def _pages(self, path: str, params: dict[str, str]) -> Iterator[dict]:
         """Läuft eine paginierte Liste durch und gibt die Einträge einzeln aus.

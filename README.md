@@ -69,6 +69,27 @@ kopieren. Oft steht sie auch einfach in der Adresszeile.
 Der Token landet in `.lidl-token` und wird dort bei jedem Erneuern überschrieben. Läuft er
 irgendwann ab, stellt derselbe Befehl den Zugang wieder her.
 
+### Zuordnung der Bonnamen
+
+Lidl druckt `Gehackte Tomaten`, Tandoor führt `Stückige Tomaten (Konserve)`. Dass beides dasselbe
+meint, ist keine Ableitung, sondern eine Entscheidung. Sie steht in `zuordnung.tsv`, eine Zeile je
+Bonname.
+
+```bash
+uv run bon map             # Datei auf den Stand der Bons bringen und gegen Tandoor prüfen
+uv run bon map --katalog   # die Lebensmittel aus Tandoor ausgeben, als Vorlage zum Zuordnen
+```
+
+Von Hand kommt allein die erste Spalte: eine ID, oder `-` für alles, was es in Tandoor nicht gibt.
+Angelegt wird nie etwas. Die übrigen Spalten schreibt der Befehl, sie zeigen beim Durchsehen,
+wohin eine ID führt und wie oft der Name vorkommt.
+
+Eine leere erste Spalte heißt, dass noch nicht entschieden wurde. Neue Artikel landen bei jedem
+Lauf so in der Datei.
+
+Die Klasse steht hier nicht. Zugeordnet wird auch, was nie in den Bestand kommt; was davon geführt
+wird, entscheidet `klassen.tsv`. Das `-` heißt deshalb nie "führt keinen Bestand".
+
 ## Bewertung
 
 `bewertung.tsv` trägt je Rezept eine Note von 0 bis 5. Sie misst nicht Geschmack, sondern wie oft
