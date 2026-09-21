@@ -11,6 +11,7 @@ dependencies = [
 
 [project.scripts]
 plan = "tandoor_automation.cli:main"
+bon = "tandoor_automation.bon:main"
 
 [dependency-groups]
 dev = [

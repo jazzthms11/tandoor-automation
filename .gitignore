@@ -7,3 +7,5 @@ __pycache__/
 bundle/
 cache/
 vorschlag/
+bons/
+.lidl-token

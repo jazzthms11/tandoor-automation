@@ -10,8 +10,8 @@ dem, was zu Hause steht. Genau diese beiden Lücken füllt dieses Projekt.
 1. **Wochenplaner**: holt Rezepte und Planhistorie, dampft sie auf die planungsrelevanten Felder
    ein, lässt ein Modell die Gerichte wählen, prüft das Ergebnis und schreibt es als Planeinträge
    zurück
-2. **Bestand** (später): Kassenbons aus der Lidl-Plus-App füllen die Pantry, der Verbrauch geht
-   über den Wochenplan oder einen Barcode-Scan ab, und die Einkaufsliste rechnet gegen den Bestand
+2. **Bestand** (im Bau): Kassenbons füllen den Bestand, der Abgang wird beim Schreiben der
+   Einkaufsliste bestätigt statt gemessen, und die Liste rechnet gegen den Bestand
 
 ## Einrichtung
 
@@ -37,6 +37,37 @@ Prüfung.
 
 `apply` holt den Stand frisch aus Tandoor und legt nur an, was dort noch fehlt. Ein zweiter Lauf
 über denselben Vorschlag schreibt deshalb nichts doppelt. `--dry-run` zeigt, was er tun würde.
+
+## Kassenbons
+
+```bash
+uv run bon fetch --dry-run   # zeigen, welche Bons fehlen
+uv run bon fetch             # fehlende Bons holen, unverändert nach bons/lidl/
+```
+
+Der Ordner ist zugleich der Stand: was dort liegt, wird nicht noch einmal geholt. Abgelegt wird
+die Antwort der API unverändert, denn was ein Bon für den Bestand hergibt, entscheidet erst die
+Zuordnung, und ein Fehler dort soll keinen neuen Abruf kosten.
+
+### Zugang zu Lidl Plus
+
+Die App-API hängt an einem Refresh-Token. Ihn holt ein einmaliger Anmeldelauf:
+
+```bash
+uv run bon login
+```
+
+Der Befehl gibt die Adresse des Anmeldebildschirms aus. Sie gehört Lidl, Benutzername und
+Passwort gehen also nirgendwo anders hin. Nach der Anmeldung leitet Lidl auf
+`com.lidlplus.app://callback?code=...` weiter, eine Adresse für die App, die kein Browser öffnen
+kann. Genau sie wird gebraucht.
+
+Am sichersten zu finden ist sie in den Entwicklerwerkzeugen: vor der Anmeldung F12 drücken, Tab
+*Netzwerkanalyse*, *Log beibehalten* anhaken, nach der Anmeldung die Zeile mit `callback?code=`
+kopieren. Oft steht sie auch einfach in der Adresszeile.
+
+Der Token landet in `.lidl-token` und wird dort bei jedem Erneuern überschrieben. Läuft er
+irgendwann ab, stellt derselbe Befehl den Zugang wieder her.
 
 ## Bewertung
 
