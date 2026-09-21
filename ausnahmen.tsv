@@ -6,11 +6,11 @@
 #
 # Spalten: klasse, id, name, grund. Gelesen werden klasse und id.
 
-# --- frische Kraeuter stehen unter Kraeuter und Gewuerze ---
-# Basilikum ist Vorrat (wir haben eine ganze Pflanze), Salatkräuter und Schnittlauch sind getrocknet also ebenfalls Vorrat
+# --- frische Ware steht unter Kraeuter und Gewuerze ---
 frisch		386	Korianderblatt, frisch		frisch, haelt wenige Tage
 frisch		261	Thymian				frisch, getrocknet steht getrennt
 frisch		241	Salbei				frisch, kein getrockneter Zwilling vorhanden
+frisch		9	Knoblauch			frisch, das Pulver steht getrennt
 
 
 # --- Bruehe wird verbraucht, nicht gelagert ---
