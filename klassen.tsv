@@ -1,4 +1,4 @@
-# Bestandsklasse je Supermarkt-Kategorie. Nur die erste Spalte aendern.
+# Bestandsklasse und Ort je Supermarkt-Kategorie. Nur die ersten beiden Spalten aendern.
 #
 #   frisch     kein Bestand. Der Wochenplan setzt es direkt auf die Liste.
 #   rezept     Bestand. Der Wochenplan loest die Rueckfrage aus.
@@ -7,35 +7,39 @@
 #   genuss     kein Bestand, nie automatisch auf der Liste.
 #   gekocht    haengt an einem Rezept, wird nie gekauft.
 #
-# Spalten: klasse, kategorie. Gelesen wird die Zeile ganz, beide Spalten zaehlen.
+# Der Ort steht nur, wo die Klasse Bestand fuehrt, sonst `-`. Er sortiert die Rueckfrage,
+# damit der Kuehlschrank einmal aufgeht und nicht fuenfmal. Gefragt wird nach dieser Spalte
+# und nicht nach dem, was in Tandoor steht: ein Umraeumen kostet dann nur diese Datei.
+#
+# Spalten: klasse, ort, kategorie. Gelesen wird die Zeile ganz, alle drei Spalten zaehlen.
 # Einzelne Lebensmittel, die hier falsch landen, stehen in ausnahmen.tsv.
 
-frisch		Obst und Gemüse
-frisch		Fleisch
-frisch		Fisch und Meeresfrüchte
-frisch		Kühltheke
+frisch		-		Obst und Gemüse
+frisch		-		Fleisch
+frisch		-		Fisch und Meeresfrüchte
+frisch		-		Kühltheke
 
-rezept		Trockenwaren
-rezept		Konserven
-rezept		Tiefkühl
+rezept		Küchenschrank	Trockenwaren
+rezept		Küchenschrank	Konserven
+rezept		Gefrierschrank	Tiefkühl
 
-vorrat		Nudeln
-vorrat		Backwaren
-vorrat		Molkereiprodukte
-vorrat		Käse
-vorrat		Cerealien
-vorrat		Aufstrich süß
-vorrat		Aufstrich herzhaft
-vorrat		Backen
-vorrat		Soßen
-vorrat		Essig und Öl
-vorrat		Getränke
-vorrat		Kaffee und Tee
+vorrat		Küchenschrank	Nudeln
+vorrat		Gefrierschrank	Backwaren
+vorrat		Kühlschrank	Molkereiprodukte
+vorrat		Kühlschrank	Käse
+vorrat		Küchenschrank	Cerealien
+vorrat		Küchenschrank	Aufstrich süß
+vorrat		Küchenschrank	Aufstrich herzhaft
+vorrat		Küchenschrank	Backen
+vorrat		Küchenschrank	Soßen
+vorrat		Abstellkammer	Essig und Öl
+vorrat		Abstellkammer	Getränke
+vorrat		Küchenschrank	Kaffee und Tee
 
-immer_da	Kräuter und Gewürze
+immer_da	-		Kräuter und Gewürze
 
-genuss		Säfte
-genuss		Alkohol
-genuss		Süßigkeiten
+genuss		-		Säfte
+genuss		-		Alkohol
+genuss		-		Süßigkeiten
 
-gekocht		Gericht
+gekocht		-		Gericht
