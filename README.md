@@ -90,6 +90,29 @@ Lauf so in der Datei.
 Die Klasse steht hier nicht. Zugeordnet wird auch, was nie in den Bestand kommt; was davon geführt
 wird, entscheidet `klassen.tsv`. Das `-` heißt deshalb nie "führt keinen Bestand".
 
+### Zugänge in den Bestand
+
+```bash
+uv run bon apply --seit 2026-09-01 --dry-run   # zeigen, was gebucht würde
+uv run bon apply --seit 2026-09-01             # buchen
+```
+
+Gebucht wird nur, was einen Abgangsweg hat, also die Klassen `rezept` und `vorrat` aus
+`klassen.tsv`. Der Ort kommt aus derselben Zeile. Mehrere Positionen desselben Lebensmittels
+werden addiert, auch über Bons hinweg, und auf einen vorhandenen Eintrag aufgeschlagen statt
+danebengelegt. Zusammengeführt wird über Lebensmittel und Einheit, nicht über den Ort: ein
+Eintrag, der woanders steht, ist umgeräumt worden, und dann gewinnt der echte Schrank.
+
+`--seit` grenzt ab, was noch im Haus steht. Beim ersten Lauf ist die Angabe nötig, sonst liefen
+alle 245 Bons in den Bestand. Ältere Bons gelten danach als abgehandelt und kommen nicht wieder.
+
+Welche Bons gebucht sind, steht in `bons/.importiert`. Anders als beim Holen trägt die Ablage das
+nicht: ein gebuchter Bon sieht aus wie ein ungebuchter, und ein zweiter Lauf würde die Mengen
+verdoppeln.
+
+Ein Artikelname ohne Entscheidung in `zuordnung.tsv` hält den Lauf an. Ein stiller Bestandsverlust
+fällt erst vor dem leeren Schrank auf, ein abgebrochener Lauf sofort.
+
 ## Bewertung
 
 `bewertung.tsv` trägt je Rezept eine Note von 0 bis 5. Sie misst nicht Geschmack, sondern wie oft

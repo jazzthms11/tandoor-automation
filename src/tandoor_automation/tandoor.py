@@ -1,13 +1,22 @@
-"""Zugriff auf die Tandoor-API: Rezepte, Lebensmittel und Plan lesen, Planeinträge anlegen."""
+"""Zugriff auf die Tandoor-API: Rezepte, Lebensmittel, Plan und Bestand."""
 
 from collections.abc import Iterator
 from datetime import date
+from decimal import Decimal
 from types import TracebackType
 
 import httpx
 
 from tandoor_automation.config import Settings
-from tandoor_automation.models import CookLog, Food, MealType, PlannedMeal, Recipe
+from tandoor_automation.models import (
+    CookLog,
+    Food,
+    InventoryEntry,
+    InventoryLocation,
+    MealType,
+    PlannedMeal,
+    Recipe,
+)
 
 PAGE_SIZE = 100
 TIMEOUT_SECONDS = 30
@@ -180,6 +189,67 @@ class TandoorClient:
             Alle Lebensmittel, nach Namen sortiert.
         """
         return [Food.model_validate(item) for item in self._pages("/api/food/", {})]
+
+    def units(self) -> dict[str, int]:
+        """Holt die Einheiten der Instanz.
+
+        Returns:
+            ID je Name der Einheit.
+        """
+        return {item["name"]: item["id"] for item in self._pages("/api/unit/", {})}
+
+    def inventory_locations(self) -> list[InventoryLocation]:
+        """Holt die Orte, an denen Bestand liegen kann.
+
+        Returns:
+            Alle Orte der Instanz.
+        """
+        return [
+            InventoryLocation.model_validate(item)
+            for item in self._pages("/api/inventory-location/", {})
+        ]
+
+    def inventory(self) -> list[InventoryEntry]:
+        """Holt den gesamten Bestand.
+
+        Geholt wird immer alles: `/api/inventory-entry/` nimmt zwar einen Filter `food` an,
+        wertet ihn aber nicht aus und gibt darauf die ganze Liste zurück.
+
+        Returns:
+            Alle Bestandseinträge.
+        """
+        return [
+            InventoryEntry.model_validate(item) for item in self._pages("/api/inventory-entry/", {})
+        ]
+
+    def create_inventory_entry(self, body: dict[str, object]) -> InventoryEntry:
+        """Legt einen Bestandseintrag an.
+
+        Args:
+            body: Der Körper der Anfrage, gebaut von `stock.payload`.
+
+        Returns:
+            Der Eintrag, wie Tandoor ihn angelegt hat.
+        """
+        response = self._client.post("/api/inventory-entry/", json=body)
+        response.raise_for_status()
+        return InventoryEntry.model_validate(response.json())
+
+    def update_inventory_amount(self, entry_id: int, amount: Decimal) -> InventoryEntry:
+        """Schreibt die Menge eines Bestandseintrags fort.
+
+        Args:
+            entry_id: Der Eintrag.
+            amount: Die neue Menge.
+
+        Returns:
+            Der Eintrag, wie Tandoor ihn danach führt.
+        """
+        response = self._client.patch(
+            f"/api/inventory-entry/{entry_id}/", json={"amount": str(amount)}
+        )
+        response.raise_for_status()
+        return InventoryEntry.model_validate(response.json())
 
     def _pages(self, path: str, params: dict[str, str]) -> Iterator[dict]:
         """Läuft eine paginierte Liste durch und gibt die Einträge einzeln aus.

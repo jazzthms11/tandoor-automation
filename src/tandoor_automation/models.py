@@ -10,6 +10,7 @@ aus ihnen geschrieben wurde.
 """
 
 from datetime import datetime, time
+from decimal import Decimal
 
 from pydantic import AliasChoices, AliasPath, BaseModel, Field, field_validator
 
@@ -133,4 +134,28 @@ class Food(BaseModel):
 
     id: int
     name: str
-    category: str = Field(default="", validation_alias=AliasPath("supermarket_category", "name"))
+    category: str = Field(
+        default="",
+        validation_alias=AliasChoices(AliasPath("supermarket_category", "name"), "category"),
+    )
+
+
+class InventoryLocation(BaseModel):
+    """Ein Ort aus `/api/inventory-location/`.
+
+    `household` wird unverändert durchgereicht: Tandoor verlangt den Haushalt beim Anlegen eines
+    Eintrags im verschachtelten Ort, und geprüft wird hier nichts davon.
+    """
+
+    id: int
+    name: str
+    household: dict[str, object] = Field(default_factory=dict)
+
+
+class InventoryEntry(BaseModel):
+    """Ein Bestandseintrag aus `/api/inventory-entry/`, reduziert auf das, was ihn wiederfindet."""
+
+    id: int
+    food_id: int = Field(validation_alias=AliasPath("food", "id"))
+    unit_id: int = Field(validation_alias=AliasPath("unit", "id"))
+    amount: Decimal = Decimal(0)

@@ -4,9 +4,18 @@ import argparse
 import json
 import re
 from collections import Counter
+from collections.abc import Iterable
+from datetime import date
 from pathlib import Path
 from typing import Any
 
+from tandoor_automation.classes import (
+    CLASSES_FILE,
+    EXCEPTIONS_FILE,
+    parse_categories,
+    parse_exceptions,
+    stock_foods,
+)
 from tandoor_automation.config import Settings
 from tandoor_automation.lidl import (
     TOKEN_FILE,
@@ -16,10 +25,16 @@ from tandoor_automation.lidl import (
     redeem,
 )
 from tandoor_automation.mapping import MAPPING_FILE, merge, parse_mapping, problems, render
-from tandoor_automation.receipts import parse_lidl
+from tandoor_automation.models import InventoryLocation
+from tandoor_automation.receipts import Receipt, parse_lidl
+from tandoor_automation.stock import Addition, additions, describe, payload, twin, undecided
 from tandoor_automation.tandoor import TandoorClient
 
 BONS_DIR = Path("bons/lidl")
+STATE_FILE = Path("bons/.importiert")
+"""Welche Bons im Bestand angekommen sind. Anders als beim Holen trägt die Ablage das nicht:
+ein gebuchter Bon sieht aus wie ein ungebuchter, und ein zweiter Lauf würde die Mengen
+verdoppeln. Gemerkt werden auch die übersprungenen, sonst holt der nächste Lauf sie nach."""
 UNKNOWN_DATE = "ohne-datum"
 
 
@@ -133,6 +148,107 @@ def _run_map(catalogue: bool) -> None:
         raise SystemExit(1)
 
 
+def _receipts() -> list[Receipt]:
+    """Liest alle abgelegten Bons, den ältesten zuerst."""
+    parsed = [
+        parse_lidl(json.loads(p.read_text(encoding="utf-8"))) for p in BONS_DIR.glob("*.json")
+    ]
+    return sorted(parsed, key=lambda receipt: receipt.purchased_on)
+
+
+def _imported() -> set[str]:
+    """Liest, welche Bons schon abgehandelt sind."""
+    if not STATE_FILE.exists():
+        return set()
+    return {line.strip() for line in STATE_FILE.read_text(encoding="utf-8").splitlines() if line}
+
+
+def _remember(receipts: Iterable[Receipt]) -> None:
+    """Hält fest, dass diese Bons abgehandelt sind."""
+    with STATE_FILE.open("a", encoding="utf-8") as handle:
+        for receipt in receipts:
+            handle.write(f"{receipt.receipt_id}\n")
+
+
+def _decided() -> dict[str, int | None]:
+    """Liest die Zuordnung, ohne die Namen, über die noch nicht entschieden wurde."""
+    entries = parse_mapping(MAPPING_FILE.read_text(encoding="utf-8"))
+    return {entry.receipt_name: entry.food_id for entry in entries if entry.decided}
+
+
+def _run_apply(since: date | None, dry_run: bool) -> None:
+    """Bucht die Zugänge aus allen Bons, die noch nicht im Bestand angekommen sind.
+
+    Args:
+        since: Nur Bons ab diesem Tag buchen, ältere gelten als abgehandelt.
+        dry_run: Nur zeigen, was gebucht würde.
+    """
+    if not STATE_FILE.exists() and since is None:
+        print("Beim ersten Lauf braucht es --seit DATUM, sonst laufen alle Bons in den Bestand.")
+        raise SystemExit(1)
+    known = _imported()
+    fresh = [receipt for receipt in _receipts() if receipt.receipt_id not in known]
+    skipped = {r.receipt_id for r in fresh if since is not None and r.purchased_on < since}
+    todo = [r for r in fresh if r.receipt_id not in skipped]
+    mapping = _decided()
+    open_names = undecided(todo, mapping)
+    for name in open_names:
+        print(f"ohne Zuordnung: {name}")
+    if open_names:
+        print(f"Erst {MAPPING_FILE} ergänzen: bon map")
+        raise SystemExit(1)
+    _book(todo, mapping, dry_run)
+    if not dry_run:
+        _remember(fresh)
+    print(f"{len(todo)} Bons gebucht, {len(skipped)} übersprungen, {len(known)} lagen schon vor")
+
+
+def _book(receipts: list[Receipt], mapping: dict[str, int | None], dry_run: bool) -> None:
+    """Rechnet die Zugänge aus und schreibt sie nach Tandoor.
+
+    Args:
+        receipts: Die zu buchenden Bons.
+        mapping: Lebensmittel-ID je Bonname.
+        dry_run: Nur zeigen, was gebucht würde.
+    """
+    with TandoorClient(Settings()) as tandoor:
+        foods = stock_foods(
+            tandoor.foods(),
+            parse_categories(CLASSES_FILE.read_text(encoding="utf-8")),
+            parse_exceptions(EXCEPTIONS_FILE.read_text(encoding="utf-8")),
+        )
+        todo = additions(receipts, mapping, foods)
+        units = tandoor.units()
+        locations = {place.name: place for place in tandoor.inventory_locations()}
+        _check(todo, units, locations)
+        inventory = tandoor.inventory()
+        for addition in todo:
+            entry_id = twin(addition, inventory, units)
+            if dry_run:
+                print(f"würde buchen: {describe(addition)}")
+            elif entry_id is not None:
+                entry = next(e for e in inventory if e.id == entry_id)
+                tandoor.update_inventory_amount(entry_id, entry.amount + addition.amount)
+                print(f"dazu: {describe(addition)}")
+            else:
+                tandoor.create_inventory_entry(
+                    payload(addition, locations[addition.location], units[addition.unit])
+                )
+                print(f"neu: {describe(addition)}")
+
+
+def _check(
+    todo: list[Addition], units: dict[str, int], locations: dict[str, InventoryLocation]
+) -> None:
+    """Prüft, dass Tandoor jeden Ort und jede Einheit kennt, die gebucht werden soll."""
+    missing = {a.location for a in todo if a.location not in locations}
+    missing |= {a.unit for a in todo if a.unit not in units}
+    for name in sorted(missing):
+        print(f'Tandoor kennt "{name}" nicht')
+    if missing:
+        raise SystemExit(1)
+
+
 def main() -> None:
     """Liest die Kommandozeile und führt den gewählten Befehl aus."""
     parser = argparse.ArgumentParser(prog="bon", description="Kassenbons für den Bestand")
@@ -146,12 +262,21 @@ def main() -> None:
         action="store_true",
         help="Statt der Zuordnung die Lebensmittel aus Tandoor ausgeben",
     )
+    apply_ = commands.add_parser("apply", help="Zugänge aus den Bons in den Bestand buchen")
+    apply_.add_argument(
+        "--seit",
+        type=date.fromisoformat,
+        help="Nur Bons ab diesem Tag buchen, ältere gelten als abgehandelt",
+    )
+    apply_.add_argument("--dry-run", action="store_true", help="Nur zeigen, was gebucht würde")
     args = parser.parse_args()
     try:
         if args.command == "login":
             _run_login()
         elif args.command == "map":
             _run_map(args.katalog)
+        elif args.command == "apply":
+            _run_apply(args.seit, args.dry_run)
         else:
             _run_fetch(args.dry_run)
     except LidlAuthError as problem:
