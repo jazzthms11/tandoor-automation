@@ -84,7 +84,8 @@ def _run_apply(path: Path, dry_run: bool) -> None:
     """Prüft einen Vorschlag gegen den aktuellen Stand in Tandoor und schreibt, was noch fehlt.
 
     Anders als `plan check` wird das Bündel hier frisch geholt: geschrieben wird gegen den Plan,
-    wie er jetzt ist, nicht gegen den, wie er beim Wählen war.
+    wie er jetzt ist, nicht gegen den, wie er beim Wählen war. Ist die Woche danach vollständig in
+    Tandoor, ist die Datei überflüssig: Tandoor ist die einzige Wahrheit, sie wird gelöscht.
 
     Args:
         path: Pfad der Vorschlagsdatei.
@@ -105,6 +106,8 @@ def _run_apply(path: Path, dry_run: bool) -> None:
             else:
                 tandoor.create_meal(payload(entry, meal_type))
                 print(f"geschrieben: {line}")
+    if not dry_run:
+        path.unlink()
 
 
 def _run_rate(dry_run: bool) -> None:

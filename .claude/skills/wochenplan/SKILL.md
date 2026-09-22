@@ -189,7 +189,8 @@ Sagt Leo, so passe es, dann schreibt `uv run plan apply vorschlag/<woche>.json` 
 Tandoor. Der Befehl prüft noch einmal gegen den Stand, wie er jetzt in Tandoor ist, und legt nur
 an, was dort noch fehlt. Ein zweiter Lauf schreibt deshalb nichts doppelt, und ein einzelner
 nachgebesserter Eintrag lässt sich mit demselben Befehl nachschieben. `--dry-run` zeigt vorher, was
-er tun würde.
+er tun würde und löscht die Datei nicht. Ohne `--dry-run` löscht `plan apply` die Vorschlagsdatei
+nach dem Schreiben, Tandoor ist danach die einzige Wahrheit.
 
 Was schon in Tandoor steht, ändert `plan apply` nicht. Soll ein bereits geschriebener Eintrag weg
 oder anders aussehen, gehört das in Tandoors Oberfläche; sag Leo das, statt es zu umgehen.
