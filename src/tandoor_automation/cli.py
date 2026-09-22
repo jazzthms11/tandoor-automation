@@ -32,11 +32,13 @@ from tandoor_automation.rating import (
     payload as rating_payload,
 )
 from tandoor_automation.shopping import (
+    INTERVALS_FILE,
     Choice,
     Question,
     Review,
     buy_list,
     confirmed_until,
+    parse_intervals,
     review,
 )
 from tandoor_automation.shopping import (
@@ -266,13 +268,17 @@ def _write_shopping(
     Unbeantwortete Fragen fassen den Bestand nicht an: keine Antwort ist keine Bestätigung. Auf
     die Liste kommen sie trotzdem.
     """
-    trusted_until = confirmed_until(today)
+    intervals = parse_intervals(INTERVALS_FILE.read_text(encoding="utf-8"))
     for question in found.questions:
         choice = answers.get(question.entry_id)
         if choice is None:
             continue
+        trusted_until = confirmed_until(today, question.food_id, intervals)
         if dry_run:
-            print(f"würde buchen: {question.food_name} auf {choice.amount}")
+            print(
+                f"würde buchen: {question.food_name} auf {choice.amount}, "
+                f"gefragt wieder ab {trusted_until}"
+            )
         else:
             tandoor.update_inventory_entry(question.entry_id, choice.amount, trusted_until)
     listed = tandoor.shopping_list()

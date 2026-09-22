@@ -9,7 +9,7 @@ from decimal import Decimal
 
 from tandoor_automation.classes import StockFood
 from tandoor_automation.models import InventoryEntry
-from tandoor_automation.shopping import buy_list, review
+from tandoor_automation.shopping import buy_list, confirmed_until, parse_intervals, review
 
 TODAY = date(2026, 9, 22)
 UNITS = {1: "Stück"}
@@ -111,3 +111,14 @@ def test_getragene_vorratsware_kommt_auch_im_plan_nicht_auf_die_liste():
     found = _review({BUTTER}, [_entry(1, BUTTER, "1", TODAY + timedelta(days=3))])
     assert found.questions == []
     assert found.unasked == []
+
+
+def test_zeile_ohne_intervall_verschiebt_die_spalten_nicht():
+    intervals = parse_intervals("# Kopf\n7\t10\tQuark\tMedian 9\n\t20\tHonig\tkeine Käufe\n")
+    assert intervals == {10: 7}
+
+
+def test_ohne_eigenes_intervall_gilt_der_rueckfall():
+    intervals = parse_intervals("7\t10\tQuark\n")
+    assert confirmed_until(TODAY, 10, intervals) == TODAY + timedelta(days=7)
+    assert confirmed_until(TODAY, 99, intervals) == TODAY + timedelta(days=14)

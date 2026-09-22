@@ -27,7 +27,7 @@ from tandoor_automation.lidl import (
 from tandoor_automation.mapping import MAPPING_FILE, merge, parse_mapping, problems, render
 from tandoor_automation.models import InventoryLocation
 from tandoor_automation.receipts import Receipt, parse_lidl
-from tandoor_automation.shopping import confirmed_until
+from tandoor_automation.shopping import INTERVALS_FILE, confirmed_until, parse_intervals
 from tandoor_automation.stock import Addition, additions, describe, payload, twin, undecided
 from tandoor_automation.tandoor import TandoorClient
 
@@ -223,9 +223,10 @@ def _book(receipts: list[Receipt], mapping: dict[str, int | None], dry_run: bool
         locations = {place.name: place for place in tandoor.inventory_locations()}
         _check(todo, units, locations)
         inventory = tandoor.inventory()
-        trusted_until = confirmed_until(date.today())
+        intervals = parse_intervals(INTERVALS_FILE.read_text(encoding="utf-8"))
         for addition in todo:
             entry_id = twin(addition, inventory, units)
+            trusted_until = confirmed_until(date.today(), addition.food_id, intervals)
             if dry_run:
                 print(f"würde buchen: {describe(addition)}")
             elif entry_id is not None:

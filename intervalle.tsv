@@ -1,0 +1,73 @@
+# Wie lange eine Antwort traegt: so viele Tage nach der Bestaetigung fragt die Rueckfrage
+# wieder nach diesem Lebensmittel. Nur die erste Spalte ausfuellen.
+#
+# Gebraucht wird die Zahl allein fuer die Klasse `vorrat`, die die Zeit ausloest. Rezeptware
+# loest der Wochenplan aus, sie steht hier nicht. Leere Zeile heisst: Rueckfall auf 14 Tage.
+#
+# Erlaubt ist jede ganze Zahl. Gefragt wird aber nur, wenn `plan shop` laeuft, also einmal die
+# Woche: unter 7 Tagen aendert sich nichts mehr, und 21 und 23 sind dieselbe Angabe.
+#
+# Die Spalte `gemessen` ist eine Lesehilfe und wird nicht gelesen. Sie zeigt den mittleren
+# Abstand zwischen zwei Kaeufen aus der Bonhistorie und wie viele Kaeufe dahinterstehen.
+# Kaufland fehlt darin, die echten Abstaende sind also eher kuerzer. Der Abstand ist ein Hinweis
+# und keine Vorgabe: gefragt wird, wie lange die Packung haelt, nicht wie oft sie im Wagen lag.
+#
+# Sortiert nach Ort und Intervall, in der Reihenfolge der Rueckfrage.
+#
+# Spalten: tage, id, name, gemessen. Gelesen werden tage und id.
+
+
+# --- Kühlschrank ---
+7	239	Ei (M)                  	Median 11, n 66
+7	302	Gouda                   	Median 37, n 12
+7	47	Joghurt                 	Median 70, n 10
+7	23	körniger Frischkäse     	Median 14, n 41
+7	353	Magerquark              	Median 9, n 49
+7	479	Skyr                    	Median 12, n 42
+21	201	Hafermilch              	Median 18, n 30
+30	42	Kochsahne               	Median 16, n 35
+14	606	Milch                   	Median 13, n 54
+21	45	Parmesan                	Median 17, n 47
+30	455	Schmand                 	Median 33, n 12
+180	411	Whey Protein Vanille    	keine Käufe
+
+# --- Gefrierschrank ---
+14	339	Brot                    	Median 14, n 53
+21	617	Baguette                	Median 22, n 23
+21	460	Vollkorntoast           	Median 24, n 21
+
+# --- Küchenschrank ---
+21	58	Nudeln                  	Median 19, n 26
+21	253	Pesto                   	Median 22, n 28
+30	57	Kernige Haferflocken    	Median 28, n 8
+30	5	Senf                    	Median 34, n 10
+30	52	ungesüßtes Kakaopulver  	Median 43, n 8
+30	358	Dinkelmehl              	Median 54, n 15
+60	524	Kaffee                  	Median 60, n 3
+90	27	Ketchup                 	Median 106, n 6
+90	185	Mayonnaise              	Median 130, n 7
+180	345	Agavendicksaft          	keine Käufe
+360	238	Backpulver              	ein Abstand: 1009 Tage
+180	494	Cornflakes              	keine Käufe
+60	21	Dinkelvollkornmehl      	ein Kauf, kein Abstand
+180	30	Erdnussbutter cremig    	ein Kauf, kein Abstand
+180	170	Honig                   	ein Kauf, kein Abstand
+90	237	Roggenmehl              	keine Käufe
+90	66	Sojasauce               	keine Käufe
+180	405	Vanillepuddingpulver    	ein Abstand: 315 Tage
+180	402	Vanillinzucker          	ein Kauf, kein Abstand
+180	31	Zucker                  	ein Abstand: 315 Tage
+
+# --- Abstellkammer ---
+14	527	Bier                    	Median 13, n 34
+21	560	Cola                    	Median 22, n 33
+180	525	Müllbeutel              	Median 262, n 4
+180	203	Rapsöl                  	Median 174, n 5
+180	556	Alufolie                	keine Käufe
+180	41	Essig Balsamico         	ein Abstand: 270 Tage
+360	43	Essig, Apfel-           	ein Kauf, kein Abstand
+360	516	Glasreiniger            	ein Kauf, kein Abstand
+360	530	Klarspüler              	ein Kauf, kein Abstand
+90	205	Kokosnussöl             	keine Käufe
+180	8	Olivenöl                	ein Abstand: 68 Tage
+90	204	Sonnenblumenöl          	ein Kauf, kein Abstand

@@ -16,17 +16,19 @@ Grenze träfe immer nur eines von beidem.
 from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal
+from pathlib import Path
 
 from tandoor_automation.classes import StockFood
 from tandoor_automation.models import InventoryEntry
 
-CONFIRM_DAYS = 14
-"""So lange gilt ein bestätigter Eintrag als real, danach fragt die Vorratsware wieder.
+INTERVALS_FILE = Path("intervalle.tsv")
+FALLBACK_DAYS = 14
+"""So lange trägt eine Antwort, solange `intervalle.tsv` das Lebensmittel nicht kennt.
 
-Geschätzt und nicht gemessen: aus den Kaufabständen ließ sich die Dauer nicht ableiten. Ein
-einzelner Wert für alles ist der Anfang. Je Kategorie getrennte Intervalle stehen noch aus, und
-sie werden weit auseinanderliegen: Milch ist nach zwei Wochen fraglich, eine Flasche Öl nach
-einem halben Jahr.
+Die Dauer hängt am Lebensmittel und nicht an seiner Kategorie: allein der Kühlschrank spannt
+von einer Woche beim Quark bis zu einem halben Jahr beim Proteinpulver. Die Kaufabstände aus
+der Bonhistorie waren dabei der Anhaltspunkt und nicht die Vorgabe, denn gefragt ist, wie lange
+eine Packung hält, und nicht, wie oft sie im Wagen lag.
 """
 BY_PLAN = "rezept"
 BY_TIME = "vorrat"
@@ -153,9 +155,42 @@ def buy_list(review_: Review, answers: dict[int, Choice]) -> list[Item]:
     return _sorted(bought)
 
 
-def confirmed_until(today: date) -> date:
-    """Sagt, bis wann eine Antwort von heute trägt."""
-    return today + timedelta(days=CONFIRM_DAYS)
+def parse_intervals(text: str) -> dict[int, int]:
+    """Liest `intervalle.tsv`.
+
+    Eine leere erste Spalte heißt: kein eigenes Intervall, es gilt der Rückfall. Gelesen wird
+    deshalb Spalte für Spalte und nicht über die gefüllten Felder, sonst rutschte die ID der
+    leeren Zeilen nach vorn.
+
+    Args:
+        text: Inhalt der Datei.
+
+    Returns:
+        Tage bis zur nächsten Rückfrage je Lebensmittel-ID.
+    """
+    found = {}
+    for line in text.splitlines():
+        if line.lstrip().startswith("#") or not line.strip():
+            continue
+        cells = [cell.strip() for cell in line.split("\t")]
+        if len(cells) < 2 or not cells[0]:
+            continue
+        found[int(cells[1])] = int(cells[0])
+    return found
+
+
+def confirmed_until(today: date, food_id: int, intervals: dict[int, int]) -> date:
+    """Sagt, bis wann eine Antwort von heute trägt.
+
+    Args:
+        today: Der Tag der Antwort.
+        food_id: Das bestätigte Lebensmittel.
+        intervals: Tage je Lebensmittel, aus `intervalle.tsv`.
+
+    Returns:
+        Der Tag, ab dem wieder gefragt wird.
+    """
+    return today + timedelta(days=intervals.get(food_id, FALLBACK_DAYS))
 
 
 def describe(question: Question) -> str:
