@@ -24,7 +24,9 @@ CONFIRM_DAYS = 14
 """So lange gilt ein bestätigter Eintrag als real, danach fragt die Vorratsware wieder.
 
 Geschätzt und nicht gemessen: aus den Kaufabständen ließ sich die Dauer nicht ableiten. Ein
-einzelner Wert für alles ist der Anfang, je Klasse getrennte Intervalle stehen noch aus.
+einzelner Wert für alles ist der Anfang. Je Kategorie getrennte Intervalle stehen noch aus, und
+sie werden weit auseinanderliegen: Milch ist nach zwei Wochen fraglich, eine Flasche Öl nach
+einem halben Jahr.
 """
 BY_PLAN = "rezept"
 BY_TIME = "vorrat"
