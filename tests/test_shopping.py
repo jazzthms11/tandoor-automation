@@ -122,3 +122,9 @@ def test_ohne_eigenes_intervall_gilt_der_rueckfall():
     intervals = parse_intervals("7\t10\tQuark\n")
     assert confirmed_until(TODAY, 10, intervals) == TODAY + timedelta(days=7)
     assert confirmed_until(TODAY, 99, intervals) == TODAY + timedelta(days=14)
+
+
+def test_zwei_bestandseintraege_ergeben_eine_zeile_auf_der_liste():
+    """Nach Gewicht und nach Stück gekauft heißt zwei Einträge, aber ein Artikel im Wagen."""
+    found = _review(set(), [_entry(1, BUTTER, "0"), _entry(2, BUTTER, "0")])
+    assert [item.food_name for item in buy_list(found, {})] == ["Butter"]

@@ -139,20 +139,25 @@ def review(
 def buy_list(review_: Review, answers: dict[int, Choice]) -> list[Item]:
     """Sucht zusammen, was auf die Einkaufsliste kommt.
 
+    Ein Lebensmittel steht höchstens einmal auf der Liste, auch wenn es mehrere Bestandseinträge
+    hat. Die entstehen, sobald derselbe Artikel einmal nach Gewicht und einmal nach Stück gekauft
+    wurde: zwei Einträge, zwei Fragen, aber ein Artikel im Wagen.
+
     Args:
         review_: Die gestellten Fragen und das ungefragt Fehlende.
         answers: Die gewählte Antwort je Eintrags-ID. Fehlt eine, gilt sie als unbestätigt und
             das Lebensmittel wird gekauft: ein fehlendes Abendessen kostet mehr als eine Dose.
 
     Returns:
-        Die zu kaufenden Lebensmittel, nach Ort und Name sortiert.
+        Die zu kaufenden Lebensmittel, nach Ort und Name sortiert, jedes einmal.
     """
     bought = list(review_.unasked)
     for question in review_.questions:
         choice = answers.get(question.entry_id)
         if choice is None or choice.buys:
             bought.append(Item(question.food_id, question.food_name, question.location))
-    return _sorted(bought)
+    once = {item.food_id: item for item in reversed(bought)}
+    return _sorted(list(once.values()))
 
 
 def parse_intervals(text: str) -> dict[int, int]:
