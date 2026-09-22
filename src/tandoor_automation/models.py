@@ -54,6 +54,40 @@ class Recipe(BaseModel):
         return [keyword["label"] if isinstance(keyword, dict) else keyword for keyword in value]
 
 
+class Ingredient(BaseModel):
+    """Eine Zutat eines Rezepts, reduziert auf Lebensmittel, Menge und Einheit.
+
+    Die Einheit ist der bloße Name: das Rezept rechnet in Gramm und Millilitern, der Bestand in
+    Packungen, und umgerechnet wird nirgends. Angezeigt wird die Menge trotzdem, damit vor dem
+    Schrank einzuschätzen ist, ob der Bestand die Woche trägt.
+    """
+
+    food_id: int = Field(validation_alias=AliasPath("food", "id"))
+    amount: Decimal = Decimal(0)
+    unit: str = ""
+
+    @field_validator("unit", mode="before")
+    @classmethod
+    def _name_only(cls, value: dict[str, str] | str | None) -> str:
+        """Ersetzt das Einheitenobjekt durch seinen Namen, eine Zutat muss keine Einheit haben."""
+        if isinstance(value, dict):
+            return value.get("name", "")
+        return value or ""
+
+
+class RecipeDetail(BaseModel):
+    """Ein Rezept samt Zutaten, wie es nur der Detailabruf liefert.
+
+    `servings` ist die Grundmenge des Rezepts. Was die Woche wirklich braucht, hängt an den
+    Portionen des Planeintrags und wird daraus hochgerechnet.
+    """
+
+    id: int
+    name: str
+    servings: int
+    ingredients: list[Ingredient]
+
+
 class PlannedMeal(BaseModel):
     """Ein Eintrag aus `/api/meal-plan/`, reduziert auf Zeitraum, Mahlzeit und Gericht.
 

@@ -11,11 +11,13 @@ from tandoor_automation.config import Settings
 from tandoor_automation.models import (
     CookLog,
     Food,
+    Ingredient,
     InventoryEntry,
     InventoryLocation,
     MealType,
     PlannedMeal,
     Recipe,
+    RecipeDetail,
 )
 
 PAGE_SIZE = 100
@@ -258,27 +260,32 @@ class TandoorClient:
         response.raise_for_status()
         return InventoryEntry.model_validate(response.json())
 
-    def recipe_foods(self, recipe_id: int) -> set[int]:
-        """Holt die Lebensmittel, die ein Rezept braucht.
+    def recipe_detail(self, recipe_id: int) -> RecipeDetail:
+        """Holt ein Rezept samt Zutaten.
 
-        Die Zutaten stehen nur im Detailabruf, die Rezeptliste trägt sie nicht. Menge und Einheit
-        bleiben liegen: der Bestand zählt Packungen, das Rezept Gramm, und die Umrechnung fehlt
-        überall. Gefragt wird deshalb, ob etwas da ist, nicht ob es reicht.
+        Die Zutaten stehen nur im Detailabruf, die Rezeptliste trägt sie nicht. Zutaten ohne
+        Lebensmittel bleiben draußen: das sind Zwischenüberschriften und Anmerkungen.
 
         Args:
             recipe_id: Das Rezept.
 
         Returns:
-            Die IDs der Lebensmittel, die in den Schritten vorkommen.
+            Name, Grundportionen und Zutaten.
         """
         response = self._client.get(f"/api/recipe/{recipe_id}/")
         response.raise_for_status()
-        return {
-            ingredient["food"]["id"]
-            for step in response.json()["steps"]
-            for ingredient in step["ingredients"]
-            if ingredient.get("food")
-        }
+        raw = response.json()
+        return RecipeDetail(
+            id=raw["id"],
+            name=raw["name"],
+            servings=raw["servings"],
+            ingredients=[
+                Ingredient.model_validate(ingredient)
+                for step in raw["steps"]
+                for ingredient in step["ingredients"]
+                if ingredient.get("food")
+            ],
+        )
 
     def shopping_list(self) -> set[int]:
         """Holt die Lebensmittel, die offen auf der Einkaufsliste stehen.

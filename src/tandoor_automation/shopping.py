@@ -19,7 +19,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from tandoor_automation.classes import StockFood
-from tandoor_automation.models import InventoryEntry
+from tandoor_automation.models import InventoryEntry, PlannedMeal, RecipeDetail
 
 INTERVALS_FILE = Path("intervalle.tsv")
 FALLBACK_DAYS = 14
@@ -54,6 +54,18 @@ class Question:
     unit: str
     amount: Decimal
     choices: list[Choice]
+
+
+@dataclass(frozen=True)
+class Need:
+    """Was die Woche von einem Lebensmittel braucht: aus welchen Gerichten und wie viel.
+
+    Die Mengen stehen nach Einheit getrennt, weil ein Lebensmittel in einem Rezept in Gramm und
+    im nächsten in Stück stehen kann. Zusammengerechnet wird nur, was dieselbe Einheit trägt.
+    """
+
+    recipes: list[str]
+    amounts: dict[str, Decimal]
 
 
 @dataclass(frozen=True)
@@ -184,6 +196,48 @@ def parse_intervals(text: str) -> dict[int, int]:
     return found
 
 
+def needs(meals: list[PlannedMeal], details: dict[int, RecipeDetail]) -> dict[int, Need]:
+    """Rechnet zusammen, was die Gerichte einer Woche je Lebensmittel brauchen.
+
+    Hochgerechnet wird auf die geplanten Portionen: ein Rezept für vier, das mit fünf Portionen
+    im Plan steht, braucht ein Viertel mehr von allem. Steht dasselbe Gericht zweimal in der
+    Woche, zählt es zweimal.
+
+    Args:
+        meals: Die Planeinträge der Woche.
+        details: Rezept samt Zutaten je Rezept-ID.
+
+    Returns:
+        Bedarf je Lebensmittel-ID, Gerichte in der Reihenfolge des Plans und jedes einmal.
+    """
+    found: dict[int, Need] = {}
+    for meal in meals:
+        detail = details.get(meal.recipe_id or 0)
+        if detail is None or not detail.servings:
+            continue
+        factor = Decimal(str(meal.servings)) / detail.servings
+        for ingredient in detail.ingredients:
+            need = found.setdefault(ingredient.food_id, Need([], {}))
+            if detail.name not in need.recipes:
+                need.recipes.append(detail.name)
+            amount = need.amounts.get(ingredient.unit, Decimal(0))
+            need.amounts[ingredient.unit] = amount + ingredient.amount * factor
+    return found
+
+
+def describe_need(need: Need) -> str:
+    """Schreibt den Bedarf einer Woche in eine Zeile.
+
+    Bewertet wird nichts: ob 1400 g in vier Dosen passen, weiß der Code nicht. Die Zahl steht
+    da, damit vor dem Schrank zu entscheiden ist.
+    """
+    amounts = ", ".join(
+        f"{_plain(amount)} {unit}".strip() for unit, amount in need.amounts.items() if amount
+    )
+    recipes = ", ".join(need.recipes)
+    return f"braucht diese Woche: {recipes}" + (f", zusammen {amounts}" if amounts else "")
+
+
 def confirmed_until(today: date, food_id: int, intervals: dict[int, int]) -> date:
     """Sagt, bis wann eine Antwort von heute trägt.
 
@@ -198,13 +252,14 @@ def confirmed_until(today: date, food_id: int, intervals: dict[int, int]) -> dat
     return today + timedelta(days=intervals.get(food_id, FALLBACK_DAYS))
 
 
-def describe(question: Question) -> str:
-    """Schreibt die Frage in eine Zeile, samt der Knöpfe."""
+def describe(question: Question, need: Need | None = None) -> str:
+    """Schreibt die Frage samt Knöpfen, und darüber den Bedarf der Woche, wenn es einen gibt."""
     stock = f"{_plain(question.amount)} {question.unit}".strip()
     buttons = "  ".join(
         f"[{index}] {choice.label}" for index, choice in enumerate(question.choices)
     )
-    return f"{question.food_name} ({stock} gebucht)\n  {buttons}"
+    demand = f"\n  {describe_need(need)}" if need else ""
+    return f"{question.food_name} ({stock} gebucht){demand}\n  {buttons}"
 
 
 def _due(food: StockFood, entry: InventoryEntry, in_plan: bool, today: date) -> bool:

@@ -8,8 +8,15 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from tandoor_automation.classes import StockFood
-from tandoor_automation.models import InventoryEntry
-from tandoor_automation.shopping import buy_list, confirmed_until, parse_intervals, review
+from tandoor_automation.models import InventoryEntry, PlannedMeal, RecipeDetail
+from tandoor_automation.shopping import (
+    buy_list,
+    confirmed_until,
+    describe_need,
+    needs,
+    parse_intervals,
+    review,
+)
 
 TODAY = date(2026, 9, 22)
 UNITS = {1: "Stück"}
@@ -128,3 +135,49 @@ def test_zwei_bestandseintraege_ergeben_eine_zeile_auf_der_liste():
     """Nach Gewicht und nach Stück gekauft heißt zwei Einträge, aber ein Artikel im Wagen."""
     found = _review(set(), [_entry(1, BUTTER, "0"), _entry(2, BUTTER, "0")])
     assert [item.food_name for item in buy_list(found, {})] == ["Butter"]
+
+
+def _meal(recipe_id: int, servings: float) -> PlannedMeal:
+    return PlannedMeal.model_validate(
+        {
+            "id": 1,
+            "from_date": "2026-09-26T19:00:00+02:00",
+            "to_date": "2026-09-26T19:00:00+02:00",
+            "meal_type_name": "Abendessen",
+            "recipe": {"id": recipe_id},
+            "servings": servings,
+        }
+    )
+
+
+def _detail(recipe_id: int, name: str, servings: int, amount: str, unit: str) -> RecipeDetail:
+    return RecipeDetail.model_validate(
+        {
+            "id": recipe_id,
+            "name": name,
+            "servings": servings,
+            "ingredients": [{"food": {"id": TOMATEN}, "amount": amount, "unit": {"name": unit}}],
+        }
+    )
+
+
+def test_bedarf_rechnet_auf_die_geplanten_portionen_hoch():
+    """Ein Rezept für vier, das mit fünf Portionen im Plan steht, braucht ein Viertel mehr."""
+    details = {1: _detail(1, "Chili", 4, "400", "g")}
+    found = needs([_meal(1, 5)], details)
+    assert found[TOMATEN].amounts == {"g": Decimal("500")}
+
+
+def test_dasselbe_gericht_zweimal_zaehlt_zweimal_und_steht_einmal():
+    details = {1: _detail(1, "Chili", 4, "400", "g")}
+    found = needs([_meal(1, 4), _meal(1, 2)], details)
+    assert found[TOMATEN].amounts == {"g": Decimal("600")}
+    assert found[TOMATEN].recipes == ["Chili"]
+
+
+def test_verschiedene_einheiten_bleiben_getrennt():
+    details = {1: _detail(1, "Chili", 4, "400", "g"), 2: _detail(2, "Suppe", 4, "2", "Stück")}
+    found = needs([_meal(1, 4), _meal(2, 4)], details)
+    assert describe_need(found[TOMATEN]) == (
+        "braucht diese Woche: Chili, Suppe, zusammen 400 g, 2 Stück"
+    )

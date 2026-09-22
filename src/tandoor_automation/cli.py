@@ -34,10 +34,12 @@ from tandoor_automation.rating import (
 from tandoor_automation.shopping import (
     INTERVALS_FILE,
     Choice,
+    Need,
     Question,
     Review,
     buy_list,
     confirmed_until,
+    needs,
     parse_intervals,
     review,
 )
@@ -188,33 +190,36 @@ def _run_shop(week: str | None, dry_run: bool) -> None:
         categories = parse_categories(CLASSES_FILE.read_text(encoding="utf-8"))
         exceptions = parse_exceptions(EXCEPTIONS_FILE.read_text(encoding="utf-8"))
         foods = tandoor.foods()
+        demand = _planned_needs(tandoor, target)
         found = review(
-            _planned_foods(tandoor, target),
+            set(demand),
             tandoor.inventory(),
             stock_foods(foods, categories, exceptions),
             fresh_foods(foods, categories, exceptions),
             {unit_id: name for name, unit_id in tandoor.units().items()},
             today,
         )
-        answers = _ask(found.questions)
+        answers = _ask(found.questions, demand)
         _write_shopping(tandoor, found, answers, today, dry_run)
 
 
-def _planned_foods(tandoor: TandoorClient, week: str) -> set[int]:
-    """Sammelt die Lebensmittel, die die Gerichte einer Woche brauchen.
+def _planned_needs(tandoor: TandoorClient, week: str) -> dict[int, Need]:
+    """Sammelt, was die Gerichte einer Woche brauchen, je Lebensmittel.
 
     Die Zutaten stehen nur im Detailabruf, das ist ein Aufruf je Rezept. Bei einer Woche sind das
-    eine Handvoll, die Rezeptliste im Ganzen zu holen wäre teurer.
+    eine Handvoll, die Rezeptliste im Ganzen zu holen wäre teurer. Jedes Rezept wird einmal
+    geholt, auch wenn es zweimal im Plan steht.
     """
     days = week_days(week)
     meals = tandoor.meal_plan(days[0], days[-1] + SPILLOVER)
-    planned: set[int] = set()
-    for recipe_id in sorted({meal.recipe_id for meal in meals if meal.recipe_id}):
-        planned |= tandoor.recipe_foods(recipe_id)
-    return planned
+    details = {
+        recipe_id: tandoor.recipe_detail(recipe_id)
+        for recipe_id in sorted({meal.recipe_id for meal in meals if meal.recipe_id})
+    }
+    return needs(meals, details)
 
 
-def _ask(questions: list[Question]) -> dict[int, Choice]:
+def _ask(questions: list[Question], demand: dict[int, Need]) -> dict[int, Choice]:
     """Stellt die Fragen im Terminal, nach Ort gebündelt.
 
     Eine leere Eingabe überspringt: die Frage bleibt unbeantwortet, und unbeantwortet heißt
@@ -223,6 +228,7 @@ def _ask(questions: list[Question]) -> dict[int, Choice]:
 
     Args:
         questions: Die Fragen, nach Ort und Name sortiert.
+        demand: Bedarf der Woche je Lebensmittel, wird über den Knöpfen gezeigt.
 
     Returns:
         Die gewählte Antwort je Eintrags-ID, nur für die beantworteten Fragen.
@@ -235,7 +241,7 @@ def _ask(questions: list[Question]) -> dict[int, Choice]:
         if question.location != place:
             place = question.location
             print(f"\n{place or 'ohne Ort'}")
-        print(f"  {describe_question(question)}")
+        print(f"  {describe_question(question, demand.get(question.food_id))}")
         choice = _read_choice(question)
         if choice is not None:
             answers[question.entry_id] = choice
