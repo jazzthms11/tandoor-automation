@@ -27,30 +27,35 @@ Zwei Personen. Eine Portion ist eine Mahlzeit für eine Person, `servings` an ei
 also die Zahl der gekochten Portionen, nicht die der Esser.
 
 Geplant werden immer alle sieben Mittag- und alle sieben Abendessen. Gekocht wird an vier Tagen:
-sonntags die Mittagessen der Woche und das Abendessen, dienstags und donnerstags je ein
-Abendessen für zwei Abende, samstags eines für Samstagabend und den Sonntagmittag.
+samstags ein Gericht für den Samstagabend und den Sonntagmittag, sonntags die Mittagessen der
+Woche und das Abendessen, dienstags und donnerstags je ein Abendessen für zwei Abende.
 
-Der Plan entsteht donnerstags, freitags wird eingekauft, sonntags vorgekocht.
+**Die Woche läuft von Samstag bis Freitag.** Der Plan entsteht donnerstags, freitags wird
+eingekauft, am Samstag fängt sie an. Der Einkauf steht damit am Anfang der Woche und nicht
+mitten darin. Das Etikett bleibt die ISO-Woche: `2026-W40` heißt Samstag, der 3. Oktober, bis
+Freitag, der 9.
 
 ## Die Form der Woche
 
+In der Reihenfolge der Woche:
+
 | Platz | Eintrag | Portionen |
 | --- | --- | --- |
-| Mittag Mo bis Fr | zwei Einträge, beide Mo bis Fr | je 5 |
 | Mittag Sa | Sa bis Sa, eine Kleinigkeit | 2 |
+| Abend Sa | Sa bis Sa | 2 |
 | Mittag So | So bis So, dasselbe Rezept wie Samstagabend | 2 |
-| Abend Mo | steht schon im Plan, kommt aus der Vorwoche | 4 |
+| Abend So | So bis Mo | 4 |
+| Mittag Mo bis Fr | zwei Einträge, beide Mo bis Fr | je 5 |
 | Abend Di und Mi | Di bis Mi | 4 |
 | Abend Do und Fr | Do bis Fr | 4 |
-| Abend Sa | Sa bis Sa | 2 |
-| Abend So | So bis Mo der **Folgewoche** | 4 |
 
 Zwei Dinge daran sind leicht zu übersehen:
 
-- **Der Montagabend gehört der Vorwoche.** Er steht als `occupied` im Bündel, weil das
-  Sonntagsgericht der Vorwoche bis dorthin reicht. Lass ihn in Ruhe. Steht dort nichts, plan ihn
-  selbst als eigenen Eintrag Mo bis Mo mit 2 Portionen
-- **Der Sonntagabend reicht über die Woche hinaus**, sein `to_date` ist der Montag danach
+- **Der Montagabend hat keinen eigenen Eintrag.** Er hängt am Sonntagsgericht, dessen `to_date`
+  der Montag ist. Acht Einträge decken so vierzehn Plätze
+- **Kein Eintrag reicht über die Ränder der Woche.** Der Samstag fängt frei an, weil der
+  Donnerstag der Vorwoche nur bis zu ihrem Freitag reicht. Steht trotzdem etwas in `occupied`,
+  ist es ein Termin oder ein Rest eines früheren Laufs, und du lässt es in Ruhe
 
 Die beiden Mittagsgerichte laufen als je ein Eintrag über Mo bis Fr. Fünf Portionen auf fünf Tage
 heißt: an jedem Tag isst eine Person das eine und die andere das andere Gericht, und über die

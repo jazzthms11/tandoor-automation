@@ -15,9 +15,6 @@ frisch		-		261	Thymian			frisch, getrocknet steht getrennt
 frisch		-		241	Salbei			frisch, kein getrockneter Zwilling vorhanden
 frisch		-		9	Knoblauch		frisch, das Pulver steht getrennt
 
-# --- Bruehe wird verbraucht, nicht gelagert ---
-vorrat		Küchenschrank	425	Rinderbrühe		geht regelmaessig leer
-
 # --- Haushaltswaren ohne Kategorie ---
 vorrat		Abstellkammer	556	Alufolie		kein Lebensmittel, wird nachgekauft
 vorrat		Abstellkammer	525	Müllbeutel		kein Lebensmittel, wird nachgekauft

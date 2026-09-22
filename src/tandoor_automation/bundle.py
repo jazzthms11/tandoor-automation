@@ -10,8 +10,15 @@ from tandoor_automation.tandoor import TandoorClient
 
 HISTORY_WEEKS = 8
 SPILLOVER = timedelta(days=1)
-"""So weit darf ein Eintrag der Woche über sie hinausragen: das Abendessen vom Sonntag wird für
-Sonntag und den Montag danach gekocht."""
+"""So weit darf ein Eintrag der Woche über sie hinausragen: ein Abendessen kann für zwei Abende
+gekocht sein und dann über den letzten Tag der Woche reichen."""
+WEEK_START = timedelta(days=2)
+"""So weit vor ihrem Montag beginnt die Woche: am Samstag davor.
+
+Eingekauft wird freitags, und der Einkauf soll am Anfang der Woche stehen und nicht mitten
+darin. Sonst liegt die Ware des Wochenendes neun Tage im Kühlschrank. Das Etikett bleibt die
+ISO-Woche des Montags, der in der Woche liegt: `2026-W40` ist Samstag, der 3. Oktober, bis
+Freitag, der 9."""
 WEEK_PATTERN = re.compile(r"^(\d{4})-W(\d{2})$")
 
 
@@ -21,9 +28,9 @@ class PlanBundle(BaseModel):
     `occupied` und `history` sind dieselbe Sorte Eintrag, nur in verschiedenen Zeiträumen:
     `occupied` belegt Plätze in der Zielwoche, `history` sagt, was zuletzt auf dem Tisch stand.
 
-    `occupied` reicht einen Tag über die Woche hinaus, denn so weit reicht auch das Abendessen vom
-    Sonntag. Ohne diesen Tag sähe ein zweiter Lauf von `plan apply` seinen eigenen Sonntagseintrag
-    nicht und legte ihn ein zweites Mal an.
+    `occupied` reicht einen Tag über die Woche hinaus, so weit wie ein Abendessen für zwei Abende
+    reichen darf. Ohne diesen Tag sähe ein zweiter Lauf von `plan apply` seinen eigenen letzten
+    Eintrag nicht und legte ihn ein zweites Mal an.
     """
 
     week: str
@@ -55,20 +62,24 @@ def parse_week(week: str) -> tuple[int, int]:
 
 
 def week_days(week: str) -> list[date]:
-    """Gibt die sieben Tage einer ISO-Woche, Montag zuerst.
+    """Gibt die sieben Tage einer Woche, Samstag zuerst.
 
     Args:
-        week: Woche in der Form `2026-W38`.
+        week: Woche in der Form `2026-W38`, benannt nach dem Montag, der in ihr liegt.
 
     Returns:
-        Montag bis Sonntag.
+        Samstag bis Freitag.
     """
     year, number = parse_week(week)
-    return [date.fromisocalendar(year, number, day) for day in range(1, 8)]
+    monday = date.fromisocalendar(year, number, 1)
+    return [monday - WEEK_START + timedelta(days=day) for day in range(7)]
 
 
 def next_week(today: date) -> str:
-    """Gibt die auf `today` folgende ISO-Woche.
+    """Gibt die nächste Woche, die noch nicht angefangen hat.
+
+    Am Samstag selbst ist das die Woche, die an diesem Tag beginnt: geplant wird für das Essen,
+    das noch kommt, und nicht für den Tag, der schon läuft.
 
     Args:
         today: Bezugstag.
@@ -76,7 +87,10 @@ def next_week(today: date) -> str:
     Returns:
         Woche in der Form `2026-W38`.
     """
-    year, number, _ = (today + timedelta(days=7)).isocalendar()
+    monday = today - timedelta(days=today.weekday())
+    while monday - WEEK_START < today:
+        monday += timedelta(days=7)
+    year, number, _ = monday.isocalendar()
     return f"{year}-W{number:02d}"
 
 

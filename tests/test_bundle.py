@@ -48,28 +48,40 @@ class FakeTandoor(TandoorClient):
         return []
 
 
-def test_sonntagabend_der_woche_steht_schon_als_belegt_im_buendel():
-    """Der Sonntagabend reicht bis zum Montag danach und fiel deshalb aus der Abfrage.
+def test_letzter_abend_der_woche_steht_schon_als_belegt_im_buendel():
+    """Ein Abendessen für zwei Abende reicht über den Freitag hinaus und fiel aus der Abfrage.
 
     Folge war ein `plan apply`, das beim zweiten Lauf genau diesen einen Eintrag nicht wiederfand
     und ihn ein zweites Mal anlegte.
     """
-    sonntagabend = meal("2026-09-27", "2026-09-28")
-    tandoor = FakeTandoor([sonntagabend])
+    freitagabend = meal("2026-09-25", "2026-09-26")
+    tandoor = FakeTandoor([freitagabend])
     bundle = build_bundle(tandoor, "2026-W39")
-    assert tandoor.last_day == date(2026, 9, 28)
-    assert bundle.occupied == [sonntagabend]
+    assert tandoor.last_day == date(2026, 9, 26)
+    assert bundle.occupied == [freitagabend]
 
 
-def test_woche_beginnt_montag_und_endet_sonntag():
+def test_woche_beginnt_samstag_und_endet_freitag():
     days = week_days("2026-W38")
-    assert days[0] == date(2026, 9, 14)
-    assert days[-1] == date(2026, 9, 20)
+    assert days[0] == date(2026, 9, 12)
+    assert days[-1] == date(2026, 9, 18)
     assert len(days) == 7
 
 
 def test_woche_ueber_den_jahreswechsel():
-    assert week_days("2027-W01")[0] == date(2027, 1, 4)
+    assert week_days("2027-W01")[0] == date(2027, 1, 2)
+
+
+def test_geplant_wird_die_woche_die_noch_nicht_laeuft():
+    """Am Donnerstag ist es die Woche ab übermorgen, am Samstag die von heute an.
+
+    Der Samstag ist der Grenzfall: wer morgens einkauft, plant für den Abend und nicht für die
+    Woche danach.
+    """
+    assert next_week(date(2026, 9, 24)) == "2026-W40"
+    assert next_week(date(2026, 9, 26)) == "2026-W40"
+    assert week_days(next_week(date(2026, 9, 26)))[0] == date(2026, 9, 26)
+    assert next_week(date(2026, 9, 27)) == "2026-W41"
 
 
 @pytest.mark.parametrize("week", ["2026-38", "2026-W", "W38-2026", "2026-W99"])

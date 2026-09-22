@@ -26,7 +26,7 @@ NAMEN = {
 
 
 def _bundle() -> PlanBundle:
-    """Eine Woche vom 21. bis 27. September 2026, deren Montagabend schon belegt ist."""
+    """Sieben Tage im September 2026, deren erster Abend schon belegt ist."""
     return PlanBundle(
         week="2026-W39",
         days=[date(2026, 9, day) for day in range(21, 28)],
@@ -120,7 +120,7 @@ def test_beginn_ausserhalb_der_woche(first: int, last: int) -> None:
     assert any("außerhalb der Woche" in problem for problem in problems)
 
 
-def test_sonntagabend_darf_bis_montag_reichen() -> None:
+def test_letzter_abend_darf_einen_tag_hinausreichen() -> None:
     assert validate_proposal(_proposal(), _bundle()) == []
 
 

@@ -20,7 +20,7 @@ TOLERANCE = 0.01
 class ProposalEntry(BaseModel):
     """Ein Platz der Woche, belegt von einem Gericht oder von einem Termin.
 
-    Der Zeitraum ist nicht der Kochtag: ein vorgekochtes Mittagessen läuft von Montag bis Freitag,
+    Der Zeitraum ist nicht der Kochtag: ein vorgekochtes Mittagessen läuft über die Arbeitswoche,
     ein Abendessen über zwei Abende. Die Uhrzeit steuert die Mahlzeit bei, `plan apply` setzt sie
     beim Schreiben ein. `recipe_name` steht neben der ID, damit die Datei lesbar bleibt und ein
     vertauschtes Rezept auffällt.
@@ -90,8 +90,8 @@ def _recipe_problems(entry: ProposalEntry, bundle: PlanBundle) -> list[str]:
 def _period_problems(entry: ProposalEntry, bundle: PlanBundle) -> list[str]:
     """Prüft Zeitraum und Portionen eines Eintrags.
 
-    Der letzte Tag darf einen Tag über die Woche hinausragen: das Abendessen vom Sonntag wird für
-    Sonntag und den Montag danach gekocht, und dieser Montag gehört schon zur nächsten Woche.
+    Der letzte Tag darf einen Tag über die Woche hinausragen: ein Abendessen kann für zwei Abende
+    gekocht sein, und der zweite gehört dann schon zur nächsten Woche.
     """
     first, last = bundle.days[0], bundle.days[-1]
     problems = []
