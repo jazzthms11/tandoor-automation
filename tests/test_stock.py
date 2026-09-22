@@ -62,11 +62,11 @@ def test_nur_klassen_mit_abgangsweg_fuehren_bestand():
 
 
 def test_ausnahme_erbt_den_ort_ihrer_kategorie():
-    assert _stock()[448] == StockFood("Ciabatta", "Gefrierschrank")
+    assert _stock()[448] == StockFood("Ciabatta", "Gefrierschrank", "rezept")
 
 
 def test_ausnahme_ohne_kategorie_bringt_ihren_ort_selbst_mit():
-    assert _stock()[556] == StockFood("Alufolie", "Abstellkammer")
+    assert _stock()[556] == StockFood("Alufolie", "Abstellkammer", "vorrat")
 
 
 def test_kategorie_ohne_eigene_zeile_bleibt_ohne_klasse():
@@ -108,8 +108,12 @@ def test_unentschiedene_namen_werden_gemeldet():
 
 def test_zusammengefuehrt_wird_ueber_lebensmittel_und_einheit_nicht_ueber_den_ort():
     entries = [
-        InventoryEntry(id=7, food={"id": 323}, unit={"id": 14}, amount=Decimal("1")),
-        InventoryEntry(id=8, food={"id": 323}, unit={"id": 10}, amount=Decimal("1")),
+        InventoryEntry.model_validate(
+            {"id": 7, "food": {"id": 323}, "unit": {"id": 14}, "amount": "1"}
+        ),
+        InventoryEntry.model_validate(
+            {"id": 8, "food": {"id": 323}, "unit": {"id": 10}, "amount": "1"}
+        ),
     ]
     stueck = Addition(323, "Stückige Tomaten", "Stück", Decimal("2"), "Abstellkammer")
     unbekannt = Addition(448, "Ciabatta", "Stück", Decimal("1"), "Gefrierschrank")

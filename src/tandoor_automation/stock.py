@@ -10,6 +10,7 @@ tatsächlich liegt.
 
 from collections import defaultdict
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
 
 from tandoor_automation.classes import StockFood
@@ -93,13 +94,17 @@ def twin(addition: Addition, entries: list[InventoryEntry], units: dict[str, int
     return None
 
 
-def payload(addition: Addition, location: InventoryLocation, unit_id: int) -> dict[str, object]:
+def payload(
+    addition: Addition, location: InventoryLocation, unit_id: int, expires: date
+) -> dict[str, object]:
     """Baut den Körper für einen neuen Bestandseintrag.
 
     Args:
         addition: Der Zugang.
         location: Der Ort, wie Tandoor ihn kennt.
         unit_id: Die ID der Einheit.
+        expires: Bis wann der Eintrag ohne neue Bestätigung als real gilt. Der Kauf selbst ist
+            die stärkste Bestätigung, die es gibt, deshalb zählt er wie eine Antwort.
 
     Returns:
         Der Körper der Anfrage an `/api/inventory-entry/`.
@@ -113,6 +118,7 @@ def payload(addition: Addition, location: InventoryLocation, unit_id: int) -> di
         "food": {"id": addition.food_id, "name": addition.food_name},
         "unit": {"id": unit_id, "name": addition.unit},
         "amount": _plain(addition.amount),
+        "expires": expires.isoformat(),
     }
 
 

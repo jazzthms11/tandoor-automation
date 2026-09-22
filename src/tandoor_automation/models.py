@@ -9,7 +9,7 @@ Schreibweisen an, denn dieselben Modelle lesen einmal Tandoors Antwort und einma
 aus ihnen geschrieben wurde.
 """
 
-from datetime import datetime, time
+from datetime import date, datetime, time
 from decimal import Decimal
 
 from pydantic import AliasChoices, AliasPath, BaseModel, Field, field_validator
@@ -153,9 +153,15 @@ class InventoryLocation(BaseModel):
 
 
 class InventoryEntry(BaseModel):
-    """Ein Bestandseintrag aus `/api/inventory-entry/`, reduziert auf das, was ihn wiederfindet."""
+    """Ein Bestandseintrag aus `/api/inventory-entry/`, reduziert auf das, was ihn wiederfindet.
+
+    `expires` trägt nicht das Mindesthaltbarkeitsdatum, sondern die Vertrauensdauer: bis wann der
+    Eintrag ohne neue Bestätigung als real gilt. Das echte Datum stünde sonst hier, aber es wird
+    nirgends erfasst, der Bon liefert es nicht.
+    """
 
     id: int
     food_id: int = Field(validation_alias=AliasPath("food", "id"))
     unit_id: int = Field(validation_alias=AliasPath("unit", "id"))
     amount: Decimal = Decimal(0)
+    expires: date | None = None

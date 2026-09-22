@@ -5,7 +5,22 @@ from datetime import date
 from pathlib import Path
 
 from tandoor_automation.apply import describe, match_existing, meal_type_of, payload, without
-from tandoor_automation.bundle import PlanBundle, build_bundle, next_week, parse_week
+from tandoor_automation.bundle import (
+    SPILLOVER,
+    PlanBundle,
+    build_bundle,
+    next_week,
+    parse_week,
+    week_days,
+)
+from tandoor_automation.classes import (
+    CLASSES_FILE,
+    EXCEPTIONS_FILE,
+    fresh_foods,
+    parse_categories,
+    parse_exceptions,
+    stock_foods,
+)
 from tandoor_automation.config import Settings
 from tandoor_automation.proposal import Proposal, validate_proposal
 from tandoor_automation.rating import (
@@ -15,6 +30,17 @@ from tandoor_automation.rating import (
 )
 from tandoor_automation.rating import (
     payload as rating_payload,
+)
+from tandoor_automation.shopping import (
+    Choice,
+    Question,
+    Review,
+    buy_list,
+    confirmed_until,
+    review,
+)
+from tandoor_automation.shopping import (
+    describe as describe_question,
 )
 from tandoor_automation.tandoor import TandoorClient
 
@@ -143,6 +169,127 @@ def _run_rate(dry_run: bool) -> None:
     print(f"{len(todo)} Änderungen, {len(ratings) - len(todo)} schon richtig")
 
 
+def _run_shop(week: str | None, dry_run: bool) -> None:
+    """Fragt den Bestand ab und schreibt daraus die Einkaufsliste der Woche.
+
+    Der Schritt liegt zwischen Plan und Einkauf: die Gerichte müssen stehen, damit die Fragen
+    entstehen, und die Bons der Vorwoche müssen gebucht sein, damit die Staffel auf dem richtigen
+    Bestand rechnet.
+
+    Args:
+        week: Zielwoche als ISO-Woche. Ohne Angabe die kommende Woche.
+        dry_run: Nur zeigen, was geschrieben würde. Gefragt wird trotzdem.
+    """
+    target = week or next_week(date.today())
+    today = date.today()
+    with TandoorClient(Settings()) as tandoor:
+        categories = parse_categories(CLASSES_FILE.read_text(encoding="utf-8"))
+        exceptions = parse_exceptions(EXCEPTIONS_FILE.read_text(encoding="utf-8"))
+        foods = tandoor.foods()
+        found = review(
+            _planned_foods(tandoor, target),
+            tandoor.inventory(),
+            stock_foods(foods, categories, exceptions),
+            fresh_foods(foods, categories, exceptions),
+            {unit_id: name for name, unit_id in tandoor.units().items()},
+            today,
+        )
+        answers = _ask(found.questions)
+        _write_shopping(tandoor, found, answers, today, dry_run)
+
+
+def _planned_foods(tandoor: TandoorClient, week: str) -> set[int]:
+    """Sammelt die Lebensmittel, die die Gerichte einer Woche brauchen.
+
+    Die Zutaten stehen nur im Detailabruf, das ist ein Aufruf je Rezept. Bei einer Woche sind das
+    eine Handvoll, die Rezeptliste im Ganzen zu holen wäre teurer.
+    """
+    days = week_days(week)
+    meals = tandoor.meal_plan(days[0], days[-1] + SPILLOVER)
+    planned: set[int] = set()
+    for recipe_id in sorted({meal.recipe_id for meal in meals if meal.recipe_id}):
+        planned |= tandoor.recipe_foods(recipe_id)
+    return planned
+
+
+def _ask(questions: list[Question]) -> dict[int, Choice]:
+    """Stellt die Fragen im Terminal, nach Ort gebündelt.
+
+    Eine leere Eingabe überspringt: die Frage bleibt unbeantwortet, und unbeantwortet heißt
+    kaufen. Ohne Terminal im Rücken wird gar nicht gefragt, dann geht alles Fragliche auf die
+    Liste.
+
+    Args:
+        questions: Die Fragen, nach Ort und Name sortiert.
+
+    Returns:
+        Die gewählte Antwort je Eintrags-ID, nur für die beantworteten Fragen.
+    """
+    if not questions:
+        return {}
+    answers: dict[int, Choice] = {}
+    place = ""
+    for question in questions:
+        if question.location != place:
+            place = question.location
+            print(f"\n{place or 'ohne Ort'}")
+        print(f"  {describe_question(question)}")
+        choice = _read_choice(question)
+        if choice is not None:
+            answers[question.entry_id] = choice
+    return answers
+
+
+def _read_choice(question: Question) -> Choice | None:
+    """Liest eine Antwort, bis sie zu den Knöpfen passt. Leer heißt übersprungen."""
+    while True:
+        try:
+            answer = input("  > ").strip()
+        except EOFError:
+            return None
+        if not answer:
+            return None
+        if answer.isdigit() and int(answer) < len(question.choices):
+            return question.choices[int(answer)]
+        print(f"  {0} bis {len(question.choices) - 1}, oder leer zum Überspringen")
+
+
+def _write_shopping(
+    tandoor: TandoorClient,
+    found: Review,
+    answers: dict[int, Choice],
+    today: date,
+    dry_run: bool,
+) -> None:
+    """Schreibt die Antworten in den Bestand und das Fehlende auf die Einkaufsliste.
+
+    Unbeantwortete Fragen fassen den Bestand nicht an: keine Antwort ist keine Bestätigung. Auf
+    die Liste kommen sie trotzdem.
+    """
+    trusted_until = confirmed_until(today)
+    for question in found.questions:
+        choice = answers.get(question.entry_id)
+        if choice is None:
+            continue
+        if dry_run:
+            print(f"würde buchen: {question.food_name} auf {choice.amount}")
+        else:
+            tandoor.update_inventory_entry(question.entry_id, choice.amount, trusted_until)
+    listed = tandoor.shopping_list()
+    wanted = buy_list(found, answers)
+    todo = [item for item in wanted if item.food_id not in listed]
+    for item in todo:
+        if dry_run:
+            print(f"würde auf die Liste: {item.food_name}")
+        else:
+            tandoor.create_shopping_entry(item.food_id)
+            print(f"auf die Liste: {item.food_name}")
+    print(
+        f"{len(answers)} von {len(found.questions)} Fragen beantwortet, "
+        f"{len(todo)} auf die Liste, {len(wanted) - len(todo)} standen schon drauf"
+    )
+
+
 def main() -> None:
     """Liest die Kommandozeile und führt den gewählten Befehl aus."""
     parser = argparse.ArgumentParser(prog="plan", description="Wochenplaner für Tandoor")
@@ -159,6 +306,12 @@ def main() -> None:
     apply_.add_argument("--dry-run", action="store_true", help="Nur zeigen, was geschrieben würde")
     rate = commands.add_parser("rate", help=f"Grundbewertung aus {RATINGS_FILE} nach Tandoor")
     rate.add_argument("--dry-run", action="store_true", help="Nur zeigen, was geschrieben würde")
+    shop = commands.add_parser("shop", help="Bestand abfragen und die Einkaufsliste schreiben")
+    shop.add_argument(
+        "--week",
+        help="Zielwoche als ISO-Woche, etwa 2026-W39. Ohne Angabe die kommende Woche.",
+    )
+    shop.add_argument("--dry-run", action="store_true", help="Nur zeigen, was geschrieben würde")
     args = parser.parse_args()
     if args.command == "check":
         _run_check(args.datei)
@@ -166,5 +319,7 @@ def main() -> None:
         _run_apply(args.datei, args.dry_run)
     elif args.command == "rate":
         _run_rate(args.dry_run)
+    elif args.command == "shop":
+        _run_shop(args.week, args.dry_run)
     else:
         print(write_bundle(args.week))

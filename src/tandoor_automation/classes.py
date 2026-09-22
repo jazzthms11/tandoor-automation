@@ -17,6 +17,8 @@ CLASSES_FILE = Path("klassen.tsv")
 EXCEPTIONS_FILE = Path("ausnahmen.tsv")
 NONE_GIVEN = "-"
 KEEPS_STOCK = frozenset({"rezept", "vorrat"})
+BUYS_FRESH = frozenset({"frisch"})
+"""Frischware führt keinen Bestand: Der Plan setzt sie ungefragt auf die Liste."""
 
 
 @dataclass(frozen=True)
@@ -29,10 +31,15 @@ class Placement:
 
 @dataclass(frozen=True)
 class StockFood:
-    """Ein Lebensmittel, das Bestand führt, samt dem Ort, an dem es liegt."""
+    """Ein Lebensmittel, das Bestand führt, samt Ort und Klasse.
+
+    Die Klasse sagt zweierlei: was die Rückfrage auslöst (`rezept` der Wochenplan, `vorrat` die
+    Zeit) und in welcher Form gefragt wird.
+    """
 
     name: str
     location: str
+    stock_class: str
 
 
 def parse_categories(text: str) -> dict[str, Placement]:
@@ -76,13 +83,39 @@ def stock_foods(
         exceptions: Klasse und Ort je abweichendem Lebensmittel.
 
     Returns:
-        Name und Ort je Lebensmittel, das Bestand führt.
+        Name, Ort und Klasse je Lebensmittel, das Bestand führt.
     """
+    return _in_classes(foods, categories, exceptions, KEEPS_STOCK)
+
+
+def fresh_foods(
+    foods: list[Food], categories: dict[str, Placement], exceptions: dict[int, Placement]
+) -> dict[int, StockFood]:
+    """Sucht die Frischware heraus, die der Plan ungefragt auf die Liste setzt.
+
+    Args:
+        foods: Alle Lebensmittel aus Tandoor.
+        categories: Klasse und Ort je Kategorie.
+        exceptions: Klasse und Ort je abweichendem Lebensmittel.
+
+    Returns:
+        Name, Ort und Klasse je Lebensmittel, das je Plan gekauft wird.
+    """
+    return _in_classes(foods, categories, exceptions, BUYS_FRESH)
+
+
+def _in_classes(
+    foods: list[Food],
+    categories: dict[str, Placement],
+    exceptions: dict[int, Placement],
+    wanted: frozenset[str],
+) -> dict[int, StockFood]:
+    """Sucht die Lebensmittel heraus, deren Klasse in `wanted` steht."""
     found = {}
     for food in foods:
         placement = _resolve(food, categories, exceptions)
-        if placement is not None and placement.stock_class in KEEPS_STOCK:
-            found[food.id] = StockFood(food.name, placement.location)
+        if placement is not None and placement.stock_class in wanted:
+            found[food.id] = StockFood(food.name, placement.location, placement.stock_class)
     return found
 
 

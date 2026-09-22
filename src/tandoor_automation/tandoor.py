@@ -235,21 +235,78 @@ class TandoorClient:
         response.raise_for_status()
         return InventoryEntry.model_validate(response.json())
 
-    def update_inventory_amount(self, entry_id: int, amount: Decimal) -> InventoryEntry:
-        """Schreibt die Menge eines Bestandseintrags fort.
+    def update_inventory_entry(
+        self, entry_id: int, amount: Decimal, expires: date
+    ) -> InventoryEntry:
+        """Schreibt Menge und Vertrauensdauer eines Bestandseintrags fort.
+
+        Beides gehört zusammen: eine neue Menge ist immer auch eine frische Bestätigung, ob sie
+        nun aus dem Bon kommt oder aus der Rückfrage.
 
         Args:
             entry_id: Der Eintrag.
             amount: Die neue Menge.
+            expires: Bis wann der Eintrag ohne neue Bestätigung als real gilt.
 
         Returns:
             Der Eintrag, wie Tandoor ihn danach führt.
         """
         response = self._client.patch(
-            f"/api/inventory-entry/{entry_id}/", json={"amount": str(amount)}
+            f"/api/inventory-entry/{entry_id}/",
+            json={"amount": str(amount), "expires": expires.isoformat()},
         )
         response.raise_for_status()
         return InventoryEntry.model_validate(response.json())
+
+    def recipe_foods(self, recipe_id: int) -> set[int]:
+        """Holt die Lebensmittel, die ein Rezept braucht.
+
+        Die Zutaten stehen nur im Detailabruf, die Rezeptliste trägt sie nicht. Menge und Einheit
+        bleiben liegen: der Bestand zählt Packungen, das Rezept Gramm, und die Umrechnung fehlt
+        überall. Gefragt wird deshalb, ob etwas da ist, nicht ob es reicht.
+
+        Args:
+            recipe_id: Das Rezept.
+
+        Returns:
+            Die IDs der Lebensmittel, die in den Schritten vorkommen.
+        """
+        response = self._client.get(f"/api/recipe/{recipe_id}/")
+        response.raise_for_status()
+        return {
+            ingredient["food"]["id"]
+            for step in response.json()["steps"]
+            for ingredient in step["ingredients"]
+            if ingredient.get("food")
+        }
+
+    def shopping_list(self) -> set[int]:
+        """Holt die Lebensmittel, die offen auf der Einkaufsliste stehen.
+
+        Abgehaktes gibt die Liste mit zurück und zählt hier nicht: es ist gekauft und soll
+        beim nächsten Lauf wieder daraufkönnen.
+
+        Returns:
+            Die IDs der Lebensmittel mit offenem Eintrag.
+        """
+        return {
+            item["food"]["id"]
+            for item in self._pages("/api/shopping-list-entry/", {})
+            if not item.get("checked") and item.get("food")
+        }
+
+    def create_shopping_entry(self, food_id: int) -> None:
+        """Setzt ein Lebensmittel auf die Einkaufsliste.
+
+        Die Liste sagt "kaufen" und führt keine Menge: `amount` genügt, `unit` darf fehlen.
+
+        Args:
+            food_id: Das Lebensmittel.
+        """
+        response = self._client.post(
+            "/api/shopping-list-entry/", json={"food": food_id, "amount": 1}
+        )
+        response.raise_for_status()
 
     def _pages(self, path: str, params: dict[str, str]) -> Iterator[dict]:
         """Läuft eine paginierte Liste durch und gibt die Einträge einzeln aus.
