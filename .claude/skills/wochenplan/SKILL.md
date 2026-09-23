@@ -32,8 +32,8 @@ Woche und das Abendessen, dienstags und donnerstags je ein Abendessen für zwei 
 
 **Die Woche läuft von Samstag bis Freitag.** Der Plan entsteht donnerstags, freitags wird
 eingekauft, am Samstag fängt sie an. Der Einkauf steht damit am Anfang der Woche und nicht
-mitten darin. Das Etikett bleibt die ISO-Woche: `2026-W40` heißt Samstag, der 3. Oktober, bis
-Freitag, der 9.
+mitten darin. Das Etikett bleibt die ISO-Woche des Montags, der in der Woche liegt: `2026-W40`
+heißt Samstag, der 26. September, bis Freitag, der 2. Oktober.
 
 ## Die Form der Woche
 
@@ -154,8 +154,8 @@ steht er später auch in Tandoor:
 {
   "title": "Besuch bei Anna",
   "meal_type_id": 2,
-  "from_date": "2026-09-26",
-  "to_date": "2026-09-26"
+  "from_date": "2026-09-25",
+  "to_date": "2026-09-25"
 }
 ```
 
