@@ -13,76 +13,82 @@
 
 
 # --- Gefrierschrank ---
-617	Gefrierschrank	vorrat	Stück		Baguette
-339	Gefrierschrank	vorrat	Stück		Brot
-448	Gefrierschrank	rezept	Stück		Ciabatta
-480	Gefrierschrank	rezept	Stück		Fladenbrot
-446	Gefrierschrank	rezept	Stück		Kaisergemüse (TK)
-619	Gefrierschrank	rezept	Stück		Rahmspinat
-460	Gefrierschrank	vorrat	Stück		Vollkorntoast
+617	Gefrierschrank	vorrat	Stück	0	Baguette
+339	Gefrierschrank	vorrat	Stück	0	Brot
+448	Gefrierschrank	rezept	Stück	2	Ciabatta
+371	Gefrierschrank	rezept	Stück	8	Fester Tofu
+480	Gefrierschrank	rezept	Stück	3	Fladenbrot
+73	Gefrierschrank	rezept	Stück	1	Frühlingszwiebel
+446	Gefrierschrank	rezept	Stück	1	Kaisergemüse (TK)
+619	Gefrierschrank	rezept	Stück	1	Rahmspinat
+489	Gefrierschrank	rezept	Stück	1	Räuchertofu
+460	Gefrierschrank	vorrat	Stück	1	Vollkorntoast
 
 # --- Abstellkammer ---
-556	Abstellkammer	vorrat	Stück		Alufolie
-527	Abstellkammer	vorrat	Stück		Bier
-560	Abstellkammer	vorrat	Stück		Cola
-41	Abstellkammer	vorrat	Stück		Essig Balsamico
-43	Abstellkammer	vorrat	Stück		Essig, Apfel-
-516	Abstellkammer	vorrat	Stück		Glasreiniger
-530	Abstellkammer	vorrat	Stück		Klarspüler
-205	Abstellkammer	vorrat	Stück		Kokosnussöl
-525	Abstellkammer	vorrat	Stück		Müllbeutel
-8	Abstellkammer	vorrat	Stück		Olivenöl
-203	Abstellkammer	vorrat	Stück		Rapsöl
+556	Abstellkammer	vorrat	Stück	1	Alufolie
+527	Abstellkammer	vorrat	Stück	3	Bier
+560	Abstellkammer	vorrat	Stück	2	Cola
+41	Abstellkammer	vorrat	Stück	1	Essig Balsamico
+43	Abstellkammer	vorrat	Stück	1	Essig, Apfel-
+516	Abstellkammer	vorrat	Stück	1	Glasreiniger
+530	Abstellkammer	vorrat	Stück	1	Klarspüler
+205	Abstellkammer	vorrat	Stück	1	Kokosnussöl
+525	Abstellkammer	vorrat	Stück	1	Müllbeutel
+8	Abstellkammer	vorrat	Stück	2	Olivenöl
+203	Abstellkammer	vorrat	Stück	0	Rapsöl
+207	Abstellkammer	vorrat	Stück	1	Sesamöl
 204	Abstellkammer	vorrat	Stück		Sonnenblumenöl
 
 # --- Kühlschrank ---
-239	Kühlschrank	vorrat	Stück		Ei (M)
-302	Kühlschrank	vorrat	Stück		Gouda
-201	Kühlschrank	vorrat	Stück		Hafermilch
-47	Kühlschrank	vorrat	Stück		Joghurt
-42	Kühlschrank	vorrat	Stück		Kochsahne
-23	Kühlschrank	vorrat	Stück		körniger Frischkäse
-353	Kühlschrank	vorrat	Stück		Magerquark
-606	Kühlschrank	vorrat	Stück		Milch
-45	Kühlschrank	vorrat	Stück		Parmesan
-455	Kühlschrank	vorrat	Stück		Schmand
-479	Kühlschrank	vorrat	Stück		Skyr
-411	Kühlschrank	vorrat	Stück		Whey Protein Vanille
+239	Kühlschrank	vorrat	Stück	7	Ei (M)
+302	Kühlschrank	vorrat	Stück	1	Gouda
+201	Kühlschrank	vorrat	Stück	6	Hafermilch
+47	Kühlschrank	vorrat	Stück	1	Joghurt
+42	Kühlschrank	vorrat	Stück	2	Kochsahne
+23	Kühlschrank	vorrat	Stück	0	körniger Frischkäse
+353	Kühlschrank	vorrat	Stück	0	Magerquark
+606	Kühlschrank	vorrat	Stück	8	Milch
+45	Kühlschrank	vorrat	Stück	1	Parmesan
+455	Kühlschrank	vorrat	Stück	1	Schmand
+479	Kühlschrank	vorrat	Stück	0	Skyr
+411	Kühlschrank	vorrat	Stück	2	Whey Protein Vanille
 
 # --- Küchenschrank ---
-345	Küchenschrank	vorrat	Stück		Agavendicksaft
-238	Küchenschrank	vorrat	Stück		Backpulver
-355	Küchenschrank	rezept	Stück		Chiasamen
-494	Küchenschrank	vorrat	Stück		Cornflakes
-118	Küchenschrank	rezept	Stück		Dattel getrocknet
-358	Küchenschrank	vorrat	Stück		Dinkelmehl
-21	Küchenschrank	vorrat	Stück		Dinkelvollkornmehl
-3	Küchenschrank	rezept	Stück		Dosenmais
-18	Küchenschrank	rezept	Stück		Dosentomate
-30	Küchenschrank	vorrat	Stück		Erdnussbutter cremig
-110	Küchenschrank	rezept	Stück		Gurke eingelegt
-170	Küchenschrank	vorrat	Stück		Honig
-524	Küchenschrank	vorrat	Stück		Kaffee
-57	Küchenschrank	vorrat	Stück		Kernige Haferflocken
-27	Küchenschrank	vorrat	Stück		Ketchup
-123	Küchenschrank	rezept	Stück		Kichererbsen
-423	Küchenschrank	rezept	Stück		Kidneybohnen
-132	Küchenschrank	rezept	Stück		Kokosnussmilch
-620	Küchenschrank	rezept	Stück		Mangostreifen getrocknet
-185	Küchenschrank	vorrat	Stück		Mayonnaise
-58	Küchenschrank	vorrat	Stück		Nudeln
-360	Küchenschrank	rezept	Stück		passierte Tomaten
-253	Küchenschrank	vorrat	Stück		Pesto
-608	Küchenschrank	rezept	Stück		Reis
-237	Küchenschrank	vorrat	Stück		Roggenmehl
-5	Küchenschrank	vorrat	Stück		Senf
-426	Küchenschrank	rezept	Stück		Sojagranulat
-66	Küchenschrank	vorrat	Stück		Sojasauce
-500	Küchenschrank	rezept	Stück		Speisestärke
-323	Küchenschrank	rezept	Stück		Stückige Tomaten (Konserve)
-1	Küchenschrank	rezept	Stück		Thunfisch
-361	Küchenschrank	rezept	Stück		Tomatenmark
-52	Küchenschrank	vorrat	Stück		ungesüßtes Kakaopulver
-405	Küchenschrank	vorrat	Stück		Vanillepuddingpulver
-402	Küchenschrank	vorrat	Stück		Vanillinzucker
-31	Küchenschrank	vorrat	Stück		Zucker
+345	Küchenschrank	vorrat	Stück	1	Agavendicksaft
+238	Küchenschrank	vorrat	Stück	9	Backpulver
+355	Küchenschrank	rezept	Stück	1	Chiasamen
+494	Küchenschrank	vorrat	Stück	1	Cornflakes
+118	Küchenschrank	rezept	Stück	0	Dattel getrocknet
+358	Küchenschrank	vorrat	Stück	0	Dinkelmehl
+21	Küchenschrank	vorrat	Stück	1	Dinkelvollkornmehl
+3	Küchenschrank	rezept	Stück	0	Dosenmais
+18	Küchenschrank	rezept	Stück	2	Dosentomate
+30	Küchenschrank	vorrat	Stück	1	Erdnussbutter cremig
+110	Küchenschrank	rezept	Stück	0	Gurke eingelegt
+170	Küchenschrank	vorrat	Stück	1	Honig
+524	Küchenschrank	vorrat	Stück	1	Kaffee
+57	Küchenschrank	vorrat	Stück	1	Kernige Haferflocken
+27	Küchenschrank	vorrat	Stück	1	Ketchup
+123	Küchenschrank	rezept	Stück	1	Kichererbsen
+423	Küchenschrank	rezept	Stück	0	Kidneybohnen
+9	Küchenschrank	vorrat	Stück	2	Knoblauch
+132	Küchenschrank	rezept	Stück	1	Kokosnussmilch
+620	Küchenschrank	rezept	Stück	0	Mangostreifen getrocknet
+185	Küchenschrank	vorrat	Stück	1	Mayonnaise
+58	Küchenschrank	vorrat	Stück	8	Nudeln
+360	Küchenschrank	rezept	Stück	6	passierte Tomaten
+253	Küchenschrank	vorrat	Stück	3	Pesto
+608	Küchenschrank	rezept	Stück	0	Reis
+237	Küchenschrank	vorrat	Stück	1	Roggenmehl
+37	Küchenschrank	vorrat	Stück	5	rote Zwiebel
+5	Küchenschrank	vorrat	Stück	1	Senf
+426	Küchenschrank	rezept	Stück	1	Sojagranulat
+66	Küchenschrank	vorrat	Stück	1	Sojasauce
+500	Küchenschrank	rezept	Stück	1	Speisestärke
+323	Küchenschrank	rezept	Stück	3	Stückige Tomaten (Konserve)
+1	Küchenschrank	rezept	Stück	6	Thunfisch
+361	Küchenschrank	rezept	Stück	1	Tomatenmark
+52	Küchenschrank	vorrat	Stück	1	ungesüßtes Kakaopulver
+405	Küchenschrank	vorrat	Stück	5	Vanillepuddingpulver
+402	Küchenschrank	vorrat	Stück	8	Vanillinzucker
+31	Küchenschrank	vorrat	Stück	1	Zucker

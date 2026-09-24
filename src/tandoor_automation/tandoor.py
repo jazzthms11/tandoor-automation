@@ -212,16 +212,22 @@ class TandoorClient:
         ]
 
     def inventory(self) -> list[InventoryEntry]:
-        """Holt den gesamten Bestand.
+        """Holt den gesamten Bestand, die leeren Einträge eingeschlossen.
 
         Geholt wird immer alles: `/api/inventory-entry/` nimmt zwar einen Filter `food` an,
         wertet ihn aber nicht aus und gibt darauf die ganze Liste zurück.
+
+        Ohne `empty` lässt Tandoor jeden Eintrag mit Menge 0 weg. Genau die werden gebraucht:
+        ein leeres Lebensmittel ist der Kaufgrund, und ein unsichtbarer Eintrag hieße außerdem,
+        dass der nächste Zugang einen zweiten daneben anlegt statt auf ihn zu buchen. Der Wert
+        des Parameters ist gleichgültig, Tandoor schaut nur, ob er dasteht.
 
         Returns:
             Alle Bestandseinträge.
         """
         return [
-            InventoryEntry.model_validate(item) for item in self._pages("/api/inventory-entry/", {})
+            InventoryEntry.model_validate(item)
+            for item in self._pages("/api/inventory-entry/", {"empty": "1"})
         ]
 
     def create_inventory_entry(self, body: dict[str, object]) -> InventoryEntry:
