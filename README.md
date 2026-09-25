@@ -108,12 +108,35 @@ uv run bon map             # Datei auf den Stand der Bons bringen und gegen Tand
 uv run bon map --katalog   # die Lebensmittel aus Tandoor ausgeben, als Vorlage zum Zuordnen
 ```
 
-Von Hand kommt allein die erste Spalte: eine ID, oder `-` für alles, was es in Tandoor nicht gibt.
-Angelegt wird nie etwas. Die übrigen Spalten schreibt der Befehl, sie zeigen beim Durchsehen,
-wohin eine ID führt und wie oft der Name vorkommt.
+Von Hand kommen die ersten zwei Spalten. Die erste trägt eine ID oder `-` für alles, was es in
+Tandoor nicht gibt; angelegt wird nie etwas. Leer heißt, dass noch nicht entschieden wurde, und so
+landen neue Artikel bei jedem Lauf in der Datei. Die übrigen Spalten schreibt der Befehl, sie
+zeigen beim Durchsehen, wohin eine ID führt und wie oft der Name vorkommt.
 
-Eine leere erste Spalte heißt, dass noch nicht entschieden wurde. Neue Artikel landen bei jedem
-Lauf so in der Datei.
+Die zweite Spalte ist der Laden und bleibt fast immer leer: derselbe Name meint fast überall
+dasselbe, und eine Zeile je Laden wäre für fast alle Namen Rauschen. Steht dort ein Laden, gilt die
+Zeile nur für ihn und sticht die Zeile ohne Laden.
+
+```
+id     laden     bonname          lebensmittel     anzahl
+426              Soja Schnetzel   Sojagranulat     3
+623    kaufland  Soja Schnetzel   Sojaschnetzel    1
+```
+
+Lidl druckt `Soja Schnetzel` für das feine Granulat, Kaufland für das grobe Geschnetzelte und
+führt das Granulat daneben als eigenen Artikel. Ohne die Ladenzeile wäre eines von beiden falsch
+gebucht, und zwar stumm.
+
+Damit dieser Fall auffällt, nennt `bon map` jeden Namen, dessen eine Entscheidung für mehr als
+einen Laden gilt:
+
+```
+Soja Schnetzel: steht bei kaufland, lidl und ist einmal entschieden
+```
+
+Die Meldung verschwindet, sobald eine Ladenzeile dasteht. Ob ein Name überall dasselbe meint, weiß
+nur der Einkauf, nicht der Code; die Meldung sagt bloß, wo hinzusehen ist. Eine Ladenzeile, deren
+Name in diesem Laden nie vorkommt, meldet `bon map` umgekehrt als Ballast.
 
 Die Klasse steht hier nicht. Zugeordnet wird auch, was nie in den Bestand kommt; was davon geführt
 wird, entscheidet `klassen.tsv`. Das `-` heißt deshalb nie "führt keinen Bestand".

@@ -15,6 +15,7 @@ from tandoor_automation.classes import (
     parse_exceptions,
     stock_foods,
 )
+from tandoor_automation.mapping import Decisions
 from tandoor_automation.models import Food, InventoryEntry
 from tandoor_automation.receipts import Receipt, ReceiptItem
 from tandoor_automation.stock import Addition, additions, dangling, twin, undecided
@@ -80,7 +81,7 @@ def test_mengen_werden_ueber_bons_hinweg_addiert():
         _receipt("2026-09-01", [("Gehackte Tomaten", "2", "stk")]),
         _receipt("2026-09-08", [("Gehackte Tomaten", "3", "stk")]),
     ]
-    mapping: dict[str, int | None] = {"Gehackte Tomaten": 323}
+    mapping: Decisions = {("lidl", "Gehackte Tomaten"): 323}
     assert additions(bons, mapping, _stock()) == [
         Addition(323, "Stückige Tomaten", "Stück", Decimal("5"), "Küchenschrank")
     ]
@@ -88,7 +89,7 @@ def test_mengen_werden_ueber_bons_hinweg_addiert():
 
 def test_verschiedene_einheiten_bleiben_getrennt():
     bon = _receipt("2026-09-01", [("Ciabatta", "2", "stk"), ("Ciabatta", "1.034", "kg")])
-    mapping: dict[str, int | None] = {"Ciabatta": 448}
+    mapping: Decisions = {("lidl", "Ciabatta"): 448}
     assert [(a.unit, a.amount) for a in additions([bon], mapping, _stock())] == [
         ("Stück", Decimal("2")),
         ("kg", Decimal("1.034")),
@@ -97,13 +98,13 @@ def test_verschiedene_einheiten_bleiben_getrennt():
 
 def test_verworfenes_und_frisches_kommt_nicht_in_den_bestand():
     bon = _receipt("2026-09-01", [("Pfand 0,25 M", "1", "stk"), ("Gurken", "2", "stk")])
-    mapping: dict[str, int | None] = {"Pfand 0,25 M": None, "Gurken": 109}
+    mapping: Decisions = {("lidl", "Pfand 0,25 M"): None, ("lidl", "Gurken"): 109}
     assert additions([bon], mapping, _stock()) == []
 
 
 def test_unentschiedene_namen_werden_gemeldet():
     bon = _receipt("2026-09-01", [("Neuer Artikel", "1", "stk"), ("Gurken", "1", "stk")])
-    assert undecided([bon], {"Gurken": 109}) == ["Neuer Artikel"]
+    assert undecided([bon], {("lidl", "Gurken"): 109}) == ["Neuer Artikel"]
 
 
 def test_zusammengefuehrt_wird_ueber_lebensmittel_und_einheit_nicht_ueber_den_ort():
@@ -124,7 +125,11 @@ def test_zusammengefuehrt_wird_ueber_lebensmittel_und_einheit_nicht_ueber_den_or
 
 def test_geloeschte_zuordnung_wird_gemeldet():
     bon = _receipt("2026-09-01", [("Zwiebeln gelb", "1", "stk"), ("Gurken", "1", "stk")])
-    mapping: dict[str, int | None] = {"Zwiebeln gelb": 211, "Gurken": 109, "Pfand": None}
+    mapping: Decisions = {
+        ("lidl", "Zwiebeln gelb"): 211,
+        ("lidl", "Gurken"): 109,
+        ("lidl", "Pfand"): None,
+    }
     ids = {food.id for food in FOODS}
-    assert dangling([bon], mapping, ids) == ["Zwiebeln gelb"]
-    assert dangling([bon], {"Gurken": 109, "Pfand": None}, ids) == []
+    assert dangling([bon], mapping, ids) == [("Zwiebeln gelb", 211)]
+    assert dangling([bon], {("lidl", "Gurken"): 109}, ids) == []

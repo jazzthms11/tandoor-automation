@@ -25,7 +25,17 @@ from tandoor_automation.lidl import (
     login_url,
     redeem,
 )
-from tandoor_automation.mapping import MAPPING_FILE, merge, parse_mapping, problems, render
+from tandoor_automation.mapping import (
+    MAPPING_FILE,
+    Counts,
+    Decisions,
+    merge,
+    parse_mapping,
+    problems,
+    render,
+    resolve,
+    spanning,
+)
 from tandoor_automation.models import InventoryLocation
 from tandoor_automation.receipts import Receipt, parse_kaufland, parse_lidl
 from tandoor_automation.shopping import INTERVALS_FILE, confirmed_until, parse_intervals
@@ -121,11 +131,11 @@ def _run_fetch(dry_run: bool) -> None:
     print(f"{fetched} neue Bons, {len(known)} lagen schon vor")
 
 
-def _receipt_names() -> Counter[str]:
-    """Zählt, wie oft jeder Artikelname über alle abgelegten Bons hinweg vorkommt."""
-    counts: Counter[str] = Counter()
+def _receipt_names() -> Counts:
+    """Zählt, wie oft jeder Artikelname vorkommt, je Laden getrennt."""
+    counts: Counts = Counter()
     for receipt in _receipts():
-        counts.update(item.name for item in receipt.items)
+        counts.update((receipt.source, item.name) for item in receipt.items)
     return counts
 
 
@@ -145,15 +155,18 @@ def _run_map(catalogue: bool) -> None:
             print(f"{food.id}\t{food.name}\t{food.category}")
         return
     known = parse_mapping(MAPPING_FILE.read_text(encoding="utf-8")) if MAPPING_FILE.exists() else []
-    entries = merge(known, _receipt_names())
+    counts = _receipt_names()
+    entries = merge(known, counts)
     names = {food.id: food.name for food in foods}
     MAPPING_FILE.write_text(render(entries, names), encoding="utf-8")
     open_names = [entry.receipt_name for entry in entries if not entry.decided]
     discarded = sum(1 for entry in entries if entry.discarded)
     print(
-        f"{MAPPING_FILE}: {len(entries)} Namen, {len(entries) - len(open_names) - discarded} "
+        f"{MAPPING_FILE}: {len(entries)} Zeilen, {len(entries) - len(open_names) - discarded} "
         f"zugeordnet, {discarded} verworfen, {len(open_names)} offen"
     )
+    for line in spanning(entries, counts):
+        print(line)
     found = problems(entries, names)
     for problem in found:
         print(problem)
@@ -253,10 +266,18 @@ def _remember(receipts: Iterable[Receipt]) -> None:
             handle.write(f"{receipt.receipt_id}\n")
 
 
-def _decided() -> dict[str, int | None]:
-    """Liest die Zuordnung, ohne die Namen, über die noch nicht entschieden wurde."""
+def _decided(receipts: list[Receipt]) -> Decisions:
+    """Legt für jede Position der Bons die geltende Entscheidung fest.
+
+    Args:
+        receipts: Die Bons, um die es geht.
+
+    Returns:
+        Lebensmittel-ID je Laden und Bonname, ohne die noch nicht entschiedenen.
+    """
     entries = parse_mapping(MAPPING_FILE.read_text(encoding="utf-8"))
-    return {entry.receipt_name: entry.food_id for entry in entries if entry.decided}
+    keys = {(receipt.source, item.name) for receipt in receipts for item in receipt.items}
+    return resolve(entries, keys)
 
 
 def _run_apply(since: date | None, dry_run: bool) -> None:
@@ -273,7 +294,7 @@ def _run_apply(since: date | None, dry_run: bool) -> None:
     fresh = [receipt for receipt in _receipts() if receipt.receipt_id not in known]
     skipped = {r.receipt_id for r in fresh if since is not None and r.purchased_on < since}
     todo = [r for r in fresh if r.receipt_id not in skipped]
-    mapping = _decided()
+    mapping = _decided(todo)
     open_names = undecided(todo, mapping)
     for name in open_names:
         print(f"ohne Zuordnung: {name}")
@@ -286,12 +307,12 @@ def _run_apply(since: date | None, dry_run: bool) -> None:
     print(f"{len(todo)} Bons gebucht, {len(skipped)} übersprungen, {len(known)} lagen schon vor")
 
 
-def _book(receipts: list[Receipt], mapping: dict[str, int | None], dry_run: bool) -> None:
+def _book(receipts: list[Receipt], mapping: Decisions, dry_run: bool) -> None:
     """Rechnet die Zugänge aus und schreibt sie nach Tandoor.
 
     Args:
         receipts: Die zu buchenden Bons.
-        mapping: Lebensmittel-ID je Bonname.
+        mapping: Lebensmittel-ID je Laden und Bonname.
         dry_run: Nur zeigen, was gebucht würde.
     """
     with TandoorClient(Settings()) as tandoor:
@@ -331,11 +352,11 @@ def _book(receipts: list[Receipt], mapping: dict[str, int | None], dry_run: bool
                 print(f"neu: {describe(addition)}")
 
 
-def _check_mapping(receipts: list[Receipt], mapping: dict[str, int | None], ids: set[int]) -> None:
+def _check_mapping(receipts: list[Receipt], mapping: Decisions, ids: set[int]) -> None:
     """Hält den Lauf an, wenn ein zugeordnetes Lebensmittel in Tandoor gelöscht wurde."""
     gone = dangling(receipts, mapping, ids)
-    for name in gone:
-        print(f"{name}: Lebensmittel {mapping[name]} gibt es nicht mehr")
+    for name, food_id in gone:
+        print(f"{name}: Lebensmittel {food_id} gibt es nicht mehr")
     if gone:
         print(f"Erst {MAPPING_FILE} berichtigen: bon map")
         raise SystemExit(1)

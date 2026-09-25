@@ -14,6 +14,7 @@ from datetime import date
 from decimal import Decimal
 
 from tandoor_automation.classes import StockFood
+from tandoor_automation.mapping import Decisions
 from tandoor_automation.models import InventoryEntry, InventoryLocation
 from tandoor_automation.receipts import KILOGRAM, PIECE, Receipt
 
@@ -32,21 +33,27 @@ class Addition:
     location: str
 
 
-def undecided(receipts: list[Receipt], mapping: dict[str, int | None]) -> list[str]:
+def undecided(receipts: list[Receipt], mapping: Decisions) -> list[str]:
     """Sucht die Artikelnamen, für die noch keine Zuordnung getroffen wurde.
 
     Args:
         receipts: Die zu buchenden Bons.
-        mapping: Lebensmittel-ID je Bonname, `None` für verworfen.
+        mapping: Lebensmittel-ID je Laden und Bonname, `None` für verworfen.
 
     Returns:
         Die offenen Namen, jeder einmal, alphabetisch.
     """
-    names = {item.name for receipt in receipts for item in receipt.items}
-    return sorted(names - set(mapping))
+    return sorted(
+        {
+            item.name
+            for receipt in receipts
+            for item in receipt.items
+            if (receipt.source, item.name) not in mapping
+        }
+    )
 
 
-def dangling(receipts: list[Receipt], mapping: dict[str, int | None], ids: set[int]) -> list[str]:
+def dangling(receipts: list[Receipt], mapping: Decisions, ids: set[int]) -> list[tuple[str, int]]:
     """Sucht die Artikelnamen, deren Lebensmittel es in Tandoor nicht mehr gibt.
 
     Eine gelöschte ID sieht für `additions` aus wie ein Lebensmittel ohne Bestand und fällt
@@ -55,20 +62,23 @@ def dangling(receipts: list[Receipt], mapping: dict[str, int | None], ids: set[i
 
     Args:
         receipts: Die zu buchenden Bons.
-        mapping: Lebensmittel-ID je Bonname, `None` für verworfen.
+        mapping: Lebensmittel-ID je Laden und Bonname, `None` für verworfen.
         ids: Die IDs, die Tandoor kennt.
 
     Returns:
-        Die betroffenen Namen, jeder einmal, alphabetisch.
+        Name und tote ID je betroffener Position, alphabetisch.
     """
-    names = {item.name for receipt in receipts for item in receipt.items}
-    return sorted(
-        name for name in names if (food_id := mapping.get(name)) is not None and food_id not in ids
-    )
+    found = set()
+    for receipt in receipts:
+        for item in receipt.items:
+            food_id = mapping.get((receipt.source, item.name))
+            if food_id is not None and food_id not in ids:
+                found.add((item.name, food_id))
+    return sorted(found)
 
 
 def additions(
-    receipts: list[Receipt], mapping: dict[str, int | None], foods: dict[int, StockFood]
+    receipts: list[Receipt], mapping: Decisions, foods: dict[int, StockFood]
 ) -> list[Addition]:
     """Rechnet aus, was die Bons dem Bestand hinzufügen.
 
@@ -78,7 +88,7 @@ def additions(
 
     Args:
         receipts: Die zu buchenden Bons.
-        mapping: Lebensmittel-ID je Bonname, `None` für verworfen.
+        mapping: Lebensmittel-ID je Laden und Bonname, `None` für verworfen.
         foods: Name und Ort je Lebensmittel, das Bestand führt.
 
     Returns:
@@ -87,7 +97,7 @@ def additions(
     amounts: dict[tuple[int, str], Decimal] = defaultdict(Decimal)
     for receipt in receipts:
         for item in receipt.items:
-            food_id = mapping.get(item.name)
+            food_id = mapping.get((receipt.source, item.name))
             if food_id is None or food_id not in foods:
                 continue
             amounts[(food_id, item.unit)] += item.quantity
