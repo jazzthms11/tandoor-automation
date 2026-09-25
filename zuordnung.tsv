@@ -190,6 +190,7 @@
 -	Dr.Oetk.Bist.Bag.Tom	-						1
 2	Dt. Markenbutter	Butter						1
 525	Duftmüllb. Zitrone	Müllbeutel					1
+188	Dunkle Miso Paste	Miso						1
 517	Dürüm Wraps		Wrap						1
 578	Edelsalami mit Rind	Wurst						1
 586	Edelschoko Arriba85%	Zartbitterschokolade				1
@@ -205,6 +206,7 @@
 449	Eierspätzle		Spätzle						11
 80	Eisbergsalat		Eisbergsalat					5
 269	Eisschale Vanille	Vanilleeis					2
+291	Eiszeit Miwa nat.	Wasser						1
 445	Emmentaler gerieben	geriebener Emmentaler				10
 -	Energy Drink Classic	-						4
 -	Energy Drink light	-						1
@@ -352,6 +354,7 @@
 47	Jogh.1,8% Himbeere	Joghurt						1
 47	Joghurt mild 3,5%	Joghurt						4
 -	Juco Designertasche	-						2
+21	K. Dinkelvomehl1kg	Dinkelvollkornmehl				1
 51	K.champignons		Champignon weiß					8
 524	Kaffee Kräftig		Kaffee						1
 -	Kaffee-/Teeb-0530523	-						1
@@ -365,17 +368,25 @@
 375	Kartoffeln fest		Kartoffel					1
 375	Kartoffeln früh		Kartoffel					3
 472	Kashkaval Käse [OGT]	Käse						1
+135	KAsia.Kokosnusswas	Kokosnusswasser					1
 364	Katensch.gew.light	Schinken					1
 364	Katenschinken		Schinken					1
 364	Katenschinken gewürf	Schinken					5
 -	Katjes Frucht		-						1
+90	Kbio LK Naturreis	Langkornreis					1
+58	KBio.Farfalle VK	Nudeln						1
+622	KBio.Kamillentee	Kamillentee					1
+621	KBioPfefferminztee	Pfefferminztee					1
 123	Kichererbsen		Kichererbsen					4
 423	Kidney Bohnen		Kidneybohnen					1
 -	Kinder Choco Fresh	-						1
 330	Kiwi			Kiwi						2
 330	Kiwi Gold		Kiwi						3
 330	Kiwi Gold Stk		Kiwi						1
+358	KL.Dinkelmehl T630	Dinkelmehl					1
 530	Klarspüler [Power]	Klarspüler					1
+525	KLC.Müllbeutel 25l	Müllbeutel					1
+203	KLC.Rapsöl		Rapsöl						1
 -	Klebepistole-0465744	-						1
 -	Knack und Back Crois	-						1
 9	Knoblauch		Knoblauch					1
@@ -530,6 +541,7 @@
 -	Pfand 0,25 7%EM		-						18
 -	Pfand 0,25 EM		-						25
 -	Pfand 0,25 M		-						89
+-	Pfandartikel		-						1
 221	Pfeffer schwarz		schwarzer Pfeffer				1
 221	Pfeffer schwarz gem	schwarzer Pfeffer				1
 -	Pfefferminzpastillen	-						3
@@ -643,7 +655,8 @@
 118	Softfrüchte Datteln	Dattel getrocknet				4
 -	Softlan Ultr.Vanille	-						2
 -	Softpudding Schoko	-						1
-426	Soja Schnetzel		Sojagranulat					3
+426	Soja Granulat		Sojagranulat					1
+426	Soja Schnetzel		Sojagranulat					4
 -	Sojajoghurt Natur	-						1
 517	Solaya Dürüm Wr		Wrap						1
 -	Sommersteaks Paprika	-						1
@@ -746,6 +759,7 @@
 531	Weizenbrötchen 8er	Brötchen					3
 339	Weltmeisterbr.		Brot						1
 -	Wochenstrauß		-						1
+339	Wurzelbrot		Brot						1
 -	Wäscheklamme-0482338	-						1
 -	würzig			-						3
 458	XXL Pizzateig		Pizzateig					1
