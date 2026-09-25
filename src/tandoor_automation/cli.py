@@ -4,7 +4,15 @@ import argparse
 from datetime import date
 from pathlib import Path
 
-from tandoor_automation.apply import describe, match_existing, meal_type_of, payload, without
+from tandoor_automation.apply import (
+    clearable,
+    describe,
+    describe_meal,
+    match_existing,
+    meal_type_of,
+    payload,
+    without,
+)
 from tandoor_automation.bundle import (
     SPILLOVER,
     PlanBundle,
@@ -22,6 +30,7 @@ from tandoor_automation.classes import (
     stock_foods,
 )
 from tandoor_automation.config import Settings
+from tandoor_automation.models import PlannedMeal
 from tandoor_automation.proposal import Proposal, validate_proposal
 from tandoor_automation.rating import (
     changes,
@@ -138,6 +147,42 @@ def _run_apply(path: Path, dry_run: bool) -> None:
                 print(f"geschrieben: {line}")
     if not dry_run:
         path.unlink()
+
+
+def _run_clear(week: str | None, ids: list[int], dry_run: bool) -> None:
+    """Nimmt die eigenen Planeinträge einer Woche wieder aus Tandoor heraus.
+
+    Gelöscht wird nur, was unter dem eigenen Token angelegt wurde: die Instanz ist geteilt, und
+    der Platz eines Mitessers ist keine eigene Entscheidung. Fremde Einträge werden genannt und
+    bleiben stehen.
+
+    Args:
+        week: Zielwoche als ISO-Woche. Ohne Angabe die kommende Woche.
+        ids: Nur diese Einträge löschen. Leer heißt: die ganze Woche.
+        dry_run: Nur zeigen, was gelöscht würde.
+    """
+    week = week or next_week(date.today())
+    days = week_days(week)
+    with TandoorClient(Settings()) as tandoor:
+        meals = tandoor.meal_plan(days[0], days[-1] + SPILLOVER)
+        mine, others = clearable(meals, days, tandoor.current_user_id(), set(ids))
+        _report([f"{entry} liegt nicht in {week}" for entry in _missing(ids, mine, others)])
+        for meal in others:
+            print(f"fremd, bleibt: {describe_meal(meal)}")
+        for meal in mine:
+            if dry_run:
+                print(f"würde löschen: {describe_meal(meal)}")
+            else:
+                tandoor.delete_meal(meal.id)
+                print(f"gelöscht: {describe_meal(meal)}")
+    verb = "zu löschen" if dry_run else "gelöscht"
+    print(f"{week}: {len(mine)} Einträge {verb}, {len(others)} fremd")
+
+
+def _missing(ids: list[int], mine: list[PlannedMeal], others: list[PlannedMeal]) -> list[int]:
+    """Sagt, welche der genannten IDs in der Woche gar nicht vorkommen."""
+    found = {meal.id for meal in mine + others}
+    return sorted(set(ids) - found)
 
 
 def _run_rate(dry_run: bool) -> None:
@@ -324,6 +369,20 @@ def main() -> None:
         help="Zielwoche als ISO-Woche, etwa 2026-W39. Ohne Angabe die kommende Woche.",
     )
     shop.add_argument("--dry-run", action="store_true", help="Nur zeigen, was geschrieben würde")
+    clear = commands.add_parser("clear", help="Eigene Planeinträge einer Woche wieder löschen")
+    clear.add_argument(
+        "--week",
+        help="Zielwoche als ISO-Woche, etwa 2026-W39. Ohne Angabe die kommende Woche.",
+    )
+    clear.add_argument(
+        "--eintrag",
+        type=int,
+        action="append",
+        default=[],
+        metavar="ID",
+        help="Nur diesen Eintrag löschen, mehrfach angebbar. Ohne Angabe die ganze Woche.",
+    )
+    clear.add_argument("--dry-run", action="store_true", help="Nur zeigen, was gelöscht würde")
     args = parser.parse_args()
     if args.command == "check":
         _run_check(args.datei)
@@ -333,5 +392,7 @@ def main() -> None:
         _run_rate(args.dry_run)
     elif args.command == "shop":
         _run_shop(args.week, args.dry_run)
+    elif args.command == "clear":
+        _run_clear(args.week, args.eintrag, args.dry_run)
     else:
         print(write_bundle(args.week))

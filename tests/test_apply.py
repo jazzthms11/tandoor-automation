@@ -7,12 +7,13 @@ Mal an. Beides fällt erst auf, wenn der Plan schon steht.
 
 from datetime import date, datetime, time
 
-from tandoor_automation.apply import describe, match_existing, payload, without
+from tandoor_automation.apply import clearable, describe, match_existing, payload, without
 from tandoor_automation.bundle import PlanBundle
 from tandoor_automation.models import MealType, PlannedMeal, Recipe
 from tandoor_automation.proposal import Proposal, ProposalEntry, validate_proposal
 
 MITTAG, ABEND = 1, 2
+ICH = 1
 MITTAGESSEN = MealType(id=MITTAG, name="Mittagessen", served_at=time(12, 0))
 ABENDESSEN = MealType(id=ABEND, name="Abendessen", served_at=time(19, 0))
 
@@ -115,3 +116,43 @@ def test_beschreibung_nennt_zeitraum_und_gericht() -> None:
     assert describe(_entry(), MITTAGESSEN) == "2026-09-21 bis 2026-09-25 Mittagessen: Lasagne"
     einer = _entry().model_copy(update={"to_date": date(2026, 9, 21)})
     assert describe(einer, MITTAGESSEN) == "2026-09-21 Mittagessen: Lasagne"
+
+
+def _planned(meal_id: int, first: int, last: int, owner: int | None) -> PlannedMeal:
+    return PlannedMeal(
+        id=meal_id,
+        title="Reste",
+        from_date=datetime(2026, 9, first, 19).astimezone(),
+        to_date=datetime(2026, 9, last, 19).astimezone(),
+        meal_type_name="Abendessen",
+        servings=2.0,
+        created_by=owner,
+    )
+
+
+def test_geloescht_wird_nur_was_in_der_woche_beginnt() -> None:
+    woche = [date(2026, 9, day) for day in range(19, 26)]
+    vorher = _planned(1, 18, 19, ICH)
+    drin = _planned(2, 25, 26, ICH)
+    danach = _planned(3, 26, 27, ICH)
+    mine, others = clearable([vorher, drin, danach], woche, ICH, set())
+    assert [meal.id for meal in mine] == [2]
+    assert others == []
+
+
+def test_fremde_eintraege_bleiben_stehen() -> None:
+    woche = [date(2026, 9, day) for day in range(19, 26)]
+    eigener = _planned(1, 20, 20, ICH)
+    fremder = _planned(2, 21, 21, ICH + 1)
+    ohne = _planned(3, 22, 22, None)
+    mine, others = clearable([eigener, fremder, ohne], woche, ICH, set())
+    assert [meal.id for meal in mine] == [1]
+    assert [meal.id for meal in others] == [2, 3]
+
+
+def test_einzelne_ids_schraenken_die_woche_ein() -> None:
+    woche = [date(2026, 9, day) for day in range(19, 26)]
+    meals = [_planned(1, 20, 20, ICH), _planned(2, 21, 21, ICH)]
+    mine, others = clearable(meals, woche, ICH, {2})
+    assert [meal.id for meal in mine] == [2]
+    assert others == []

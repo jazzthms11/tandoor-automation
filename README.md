@@ -29,6 +29,9 @@ uv run plan bundle                            # Kontextbündel der kommenden Woc
 uv run plan check vorschlag/2026-W39.json     # Vorschlag gegen das Bündel prüfen
 uv run plan apply vorschlag/2026-W39.json     # prüfen und nach Tandoor schreiben
 uv run plan rate                              # Grundbewertung aus bewertung.tsv abgleichen
+uv run plan clear --dry-run                   # zeigen, was aus der kommenden Woche fiele
+uv run plan clear --week 2026-W40             # die eigenen Einträge der Woche löschen
+uv run plan clear --eintrag 181               # nur diesen Eintrag löschen
 ```
 
 Zwischen `bundle` und `check` sitzt der Wähler: im Gespräch Claude über den Skill unter
@@ -37,6 +40,11 @@ Prüfung.
 
 `apply` holt den Stand frisch aus Tandoor und legt nur an, was dort noch fehlt. Ein zweiter Lauf
 über denselben Vorschlag schreibt deshalb nichts doppelt. `--dry-run` zeigt, was er tun würde.
+
+`clear` ist der Rückweg und löscht nur, was unter dem eigenen Token angelegt wurde: die Instanz ist
+geteilt, der Platz eines Mitessers bleibt stehen und wird genannt. Maßgeblich ist der erste Tag
+eines Eintrags, ein Abendessen für zwei Abende darf also über den Freitag hinausragen. Die IDs
+stehen in der Ausgabe von `plan clear --dry-run`.
 
 ## Kassenbons
 

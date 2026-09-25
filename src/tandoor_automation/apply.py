@@ -4,6 +4,8 @@ Zwei Dinge passieren hier, die `plan check` nicht braucht. Erstens wird aus dem 
 Eintrags ein Zeitstempel, denn Tandoor führt einen Planeintrag mit der Uhrzeit seiner Mahlzeit.
 Zweitens wird der Vorschlag gegen den aktuellen Stand in Tandoor gehalten, damit ein zweiter Lauf
 nichts doppelt schreibt: was schon genau so dort steht, gilt als erledigt und nicht als Kollision.
+
+Der Rückweg steht daneben: `clearable` sagt, welche Einträge einer Woche wieder verschwinden dürfen.
 """
 
 from datetime import date, datetime, time
@@ -34,11 +36,48 @@ def meal_type_of(bundle: PlanBundle, entry: ProposalEntry) -> MealType | None:
 
 def describe(entry: ProposalEntry, meal_type: MealType | None) -> str:
     """Nennt einen Eintrag so, wie er in der Ausgabe von `plan apply` wiederzuerkennen ist."""
-    span = str(entry.from_date)
-    if entry.to_date != entry.from_date:
-        span = f"{entry.from_date} bis {entry.to_date}"
     name = meal_type.name if meal_type else f"Mahlzeit {entry.meal_type_id}"
-    return f"{span} {name}: {entry.recipe_name or entry.title}"
+    return f"{_span(entry.from_date, entry.to_date)} {name}: {entry.recipe_name or entry.title}"
+
+
+def _span(start: date, end: date) -> str:
+    """Nennt den Zeitraum eines Eintrags, den einzelnen Tag ohne Wiederholung."""
+    return str(start) if start == end else f"{start} bis {end}"
+
+
+def describe_meal(meal: PlannedMeal) -> str:
+    """Nennt einen Planeintrag samt seiner ID, so wie `plan clear` ihn ausgibt."""
+    return f"{_span(meal.from_date.date(), meal.to_date.date())} {meal.meal_type_name}: " + (
+        f"{meal.recipe_name or meal.title} [{meal.id}]"
+    )
+
+
+def clearable(
+    meals: list[PlannedMeal], days: list[date], user_id: int, ids: set[int]
+) -> tuple[list[PlannedMeal], list[PlannedMeal]]:
+    """Teilt die Planeinträge einer Woche in die eigenen und die fremden.
+
+    Maßgeblich ist der erste Tag eines Eintrags, nicht seine Überschneidung mit der Woche. Ein
+    Abendessen für zwei Abende ragt über den Freitag hinaus und gehört trotzdem in diese Woche;
+    eines, das am Freitag davor beginnt, gehört in die vorige und bleibt stehen.
+
+    Args:
+        meals: Die aus Tandoor geholten Einträge.
+        days: Die Tage der Woche, Samstag zuerst.
+        user_id: Die eigene Benutzer-ID.
+        ids: Auf diese Einträge beschränken. Leer heißt: die ganze Woche.
+
+    Returns:
+        Die eigenen Einträge und die fremden, beide in der Reihenfolge ihres ersten Tages.
+    """
+    chosen = [meal for meal in meals if days[0] <= meal.from_date.date() <= days[-1]]
+    if ids:
+        chosen = [meal for meal in chosen if meal.id in ids]
+    chosen.sort(key=lambda meal: (meal.from_date, meal.meal_type_name))
+    return (
+        [meal for meal in chosen if meal.created_by == user_id],
+        [meal for meal in chosen if meal.created_by != user_id],
+    )
 
 
 def _is_twin(entry: ProposalEntry, meal: PlannedMeal, meal_type: MealType) -> bool:

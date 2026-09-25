@@ -184,6 +184,15 @@ class TandoorClient:
         response.raise_for_status()
         return PlannedMeal.model_validate(response.json())
 
+    def delete_meal(self, meal_id: int) -> None:
+        """Löscht einen Planeintrag.
+
+        Args:
+            meal_id: ID des Eintrags.
+        """
+        response = self._client.delete(f"/api/meal-plan/{meal_id}/")
+        response.raise_for_status()
+
     def foods(self) -> list[Food]:
         """Holt alle Lebensmittel der Instanz.
 

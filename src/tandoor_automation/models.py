@@ -108,6 +108,8 @@ class PlannedMeal(BaseModel):
     )
     recipe_name: str = ""
     servings: float
+    created_by: int | None = None
+    """Wer den Eintrag angelegt hat. Die Instanz ist geteilt, und gelöscht wird nur Eigenes."""
 
     @field_validator("recipe_id", mode="before")
     @classmethod
