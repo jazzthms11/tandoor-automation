@@ -19,11 +19,11 @@
 432	Alpenh. Mozarella	Mozzarella					1
 -	Alpenhain Classic	-						1
 -	Amerika.Eis m.Cookie	-						1
--	Ananas Direktsaft	-						1
+-	Ananas Direktsaft	-						2
 24	Apfel pink kg		Äpfel						1
 24	Apfel Pink Lady		Äpfel						4
 24	Apfel rot		Äpfel						4
-24	Apfel rot süß		Äpfel						6
+24	Apfel rot süß		Äpfel						7
 24	Apfel rot, süß		Äpfel						1
 24	Apfel rot,extra		Äpfel						1
 -	Apfelmus ungezuckert	-						1
@@ -50,7 +50,7 @@
 617	Baguette Körner		Baguette					1
 339	Balance Brot		Brot						1
 41	Balsamico Modena	Essig Balsamico					1
-26	Banane lose		Banane						30
+26	Banane lose		Banane						31
 26	Bananen Fairtra		Banane						1
 26	Bananen kg		Banane						10
 26	Bananen lose		Banane						7
@@ -106,10 +106,10 @@
 31	Bioland Rübenzucker	Zucker						1
 489	Bioland Tofu geräu.	Räuchertofu					3
 371	Bioland Tofu natur	Fester Tofu					11
-609	Bioland Zwiebel		Zwiebel						1
+-	Bioland Zwiebel		-						1
 -	Birnen kg		-						1
 -	Birnen lose		-						1
-527	Bitburger Herb 0%	Bier						33
+527	Bitburger Herb 0%	Bier						35
 502	Bitter Aperitiv 11%	Aperol						3
 -	Blattgelatine		-						1
 158	Blätterteig		Blätterteig					4
@@ -119,14 +119,15 @@
 298	Brie Spitze 60%		Brie						1
 470	BriocheBröt.m.Butter	Brioche-Burgerbrötchen				1
 339	Brot Bauernkru.		Brot						2
-448	Brot Ciabatta		Ciabatta					27
+448	Brot Ciabatta		Ciabatta					28
 480	Brot Fladen So.		Fladenbrot					21
 339	Brot Meister		Brot						26
 339	Brot Roggenkr.		Brot						2
-339	Brot Roggenkru		Brot						1
+339	Brot Roggenkru		Brot						2
 339	Brot Vk.K Biol.		Brot						1
 339	Brot Wurzel		Brot						1
 -	Brotchips Pizza		-						1
+-	Brotchips Tomate	-						1
 17	Brunch Kräuter		Frischkäse					1
 17	Brunch Natur		Frischkäse					1
 531	Brötchen Kürbis		Brötchen					3
@@ -158,7 +159,7 @@
 560	Coca-Cola Zero		Cola						5
 560	Coca-Cola ZeroCherry	Cola						2
 560	CocaCola sort.		Cola						1
-560	CocaCola Zero		Cola						15
+560	CocaCola Zero		Cola						17
 -	Cocktail Wild Berry	-						1
 390	Cocktailtomaten		Kirschtomate					4
 560	Cola 0% 0,33l		Cola						1
@@ -218,7 +219,7 @@
 524	Espresso Intenso	Kaffee						1
 -	Espresso Macchiato	-						2
 524	Espresso UTZ		Kaffee						1
-17	Exquisa Fitl.Kräuter	Frischkäse					8
+17	Exquisa Fitl.Kräuter	Frischkäse					9
 17	Exquisa FitlineNatur	Frischkäse					7
 17	Exquisa fitlineNatur	Frischkäse					1
 17	Exquisa Sahnig-Natur	Frischkäse					3
@@ -261,7 +262,7 @@
 -	Gefrierbeu. 100er 1l	-						1
 215	Gefriergetr.Oregano	getrockneter Oregano				1
 323	Gehack. Tom. Kräu.	Stückige Tomaten (Konserve)			1
-323	Gehackte Tomaten	Stückige Tomaten (Konserve)			35
+323	Gehackte Tomaten	Stückige Tomaten (Konserve)			36
 270	Gemüse-Brühe		Gemüsebrühe					5
 270	Gemüsebrühe		Gemüsebrühe					1
 3	Gemüsemais supersw.	Dosenmais					1
@@ -270,7 +271,7 @@
 -	Geschirrreininger	-						1
 -	Geschirrsp. Blau	-						1
 -	Gest. Eis Schwarzw.K	-						1
-620	Getr. Früchte Mango	Mangostreifen getrocknet			3
+620	Getr. Früchte Mango	Mangostreifen getrocknet			4
 -	Giov.Rana Rav.Ricott	-						2
 45	Giovanni Ferr.Padano	Parmesan					2
 490	Gnocchi			Gnocchi						8
@@ -291,7 +292,7 @@
 -	Griechisches Frutti	-						1
 -	Grillfackeln		-						1
 109	Gurke Stk		Gurke						13
-109	Gurken			Gurke						57
+109	Gurken			Gurke						58
 -	Gypsophila		-						5
 606	H-Milch 1,5%		Milch						26
 606	H-Milch 1,5% OGT	Milch						10
@@ -328,7 +329,7 @@
 112	Himbeeren		Himbeeren					14
 -	Himbeergries		-						1
 15	Hirtenkäse 45%		Feta						3
-15	Hirtenkäse 45% (OGT)	Feta						39
+15	Hirtenkäse 45% (OGT)	Feta						40
 214	HohesC leichteOrange	Orangensaft					1
 616	Holunderbeere Seife	Seife						1
 -	HP Drink Schoko		-						1
@@ -349,7 +350,7 @@
 578	Jagdwurst		Wurst						1
 -	Jogh. & Waffelwürfel	-						1
 47	Jogh.1,8% Himbeere	Joghurt						1
-47	Joghurt mild 3,5%	Joghurt						3
+47	Joghurt mild 3,5%	Joghurt						4
 -	Juco Designertasche	-						2
 51	K.champignons		Champignon weiß					8
 524	Kaffee Kräftig		Kaffee						1
@@ -372,7 +373,7 @@
 423	Kidney Bohnen		Kidneybohnen					1
 -	Kinder Choco Fresh	-						1
 330	Kiwi			Kiwi						2
-330	Kiwi Gold		Kiwi						2
+330	Kiwi Gold		Kiwi						3
 330	Kiwi Gold Stk		Kiwi						1
 530	Klarspüler [Power]	Klarspüler					1
 -	Klebepistole-0465744	-						1
@@ -383,13 +384,13 @@
 -	Knorr Gartenkräuter	-						1
 -	KnotenbeutelO&G		-						11
 -	Knusper Dark		-						3
-503	Kohl China		Chinakohl					2
+503	Kohl China		Chinakohl					3
 132	Kokosmilch cremig	Kokosnussmilch					1
 132	Kokosmilch fettred.	Kokosnussmilch					1
-132	Kokosnuss-Mil Light	Kokosnussmilch					7
+132	Kokosnuss-Mil Light	Kokosnussmilch					8
 132	Kokosnussmil. Light	Kokosnussmilch					1
 134	Kokosraspeln		Kokosnussflocken				1
-132	Kokusnuss-Mil Normal	Kokosnussmilch					4
+132	Kokusnuss-Mil Normal	Kokosnussmilch					5
 132	Kokusnussmil. Normal	Kokosnussmilch					2
 434	Kopfsalat		Kopfsalat					4
 434	Kopfsalat mit Wurzel	Kopfsalat					21
@@ -405,7 +406,7 @@
 -	Käse-Brezel		-						1
 -	Käse-Lau.stange		-						6
 472	Käseaufschnitt		Käse						2
-472	Käseaufschnitt light	Käse						33
+472	Käseaufschnitt light	Käse						35
 302	Käsescheiben Gouda	Gouda						1
 472	KäsescheibenButterk.	Käse						3
 -	Käseschnecke		-						3
@@ -415,7 +416,7 @@
 617	Körnerbaguette		Baguette					1
 23	Körnig.Frischkäse20%	körniger Frischkäse				5
 23	Körniger Frisch		körniger Frischkäse				1
-23	Körniger Frischkäse	körniger Frischkäse				16
+23	Körniger Frischkäse	körniger Frischkäse				17
 -	Küchenhelfer-0481184	-						1
 615	Küchentücher 3-lagig	Küchenrolle					1
 -	Küchenwaage-0474483	-						1
@@ -459,13 +460,13 @@
 89	Mini Romana		Römersalat					5
 578	Mini-Wiener Klassik	Wurst						2
 185	Miracel Whip Balance	Mayonnaise					1
-432	Mozzarella		Mozzarella					33
+432	Mozzarella		Mozzarella					34
 432	Mozzarella Classic	Mozzarella					6
 432	Mozzarella Classic M	Mozzarella					2
 432	Mozzarella für Pizza	Mozzarella					1
 432	Mozzarella ger.		Mozzarella					2
 432	Mozzarella gerieben	Mozzarella					23
-331	Mozzarella light	Fettreduzierter Mozzarella			35
+331	Mozzarella light	Fettreduzierter Mozzarella			36
 331	Mozzarella Light	Fettreduzierter Mozzarella			2
 1	MSC Thunfischst.i.So	Thunfisch					1
 242	MSC Wildlachsfilets	Lachsfilet					3
@@ -487,6 +488,7 @@
 -	Neo Keksrolle Vani.	-						1
 -	Nola Stabfeuerzeug	-						1
 -	Norweg. Räucherlachs	-						1
+-	Nu. Noug. Crois		-						1
 -	Nutella			-						3
 -	Nuts Royal		-						2
 -	OfenKäse cremig-mild	-						1
@@ -527,7 +529,7 @@
 -	Pfand 0,25 7% M		-						1
 -	Pfand 0,25 7%EM		-						18
 -	Pfand 0,25 EM		-						25
--	Pfand 0,25 M		-						85
+-	Pfand 0,25 M		-						89
 221	Pfeffer schwarz		schwarzer Pfeffer				1
 221	Pfeffer schwarz gem	schwarzer Pfeffer				1
 -	Pfefferminzpastillen	-						3
@@ -632,13 +634,13 @@
 -	Sesam Knäckebrot	-						1
 479	Skyr Natur (OGT)	Skyr						29
 479	Skyr Natur Joghurt	Skyr						10
-479	Skyr Natur OGT HF3	Skyr						3
+479	Skyr Natur OGT HF3	Skyr						5
 -	Smoothie Apfel-Ban.	-						1
 -	Snack-Mix		-						1
 472	Snackwürfel Butterk.	Käse						1
 302	Snackwürfel Gouda	Gouda						2
 22	Sodergarden gesalzen	gesalzene Butter				1
-118	Softfrüchte Datteln	Dattel getrocknet				3
+118	Softfrüchte Datteln	Dattel getrocknet				4
 -	Softlan Ultr.Vanille	-						2
 -	Softpudding Schoko	-						1
 426	Soja Schnetzel		Sojagranulat					3
@@ -652,7 +654,7 @@
 375	Speisekartoff.vor.f.	Kartoffel					7
 375	Speisekartoffel		Kartoffel					1
 375	Speisekartoffeln	Kartoffel					18
-353	Speisequark 0%		Magerquark					49
+353	Speisequark 0%		Magerquark					50
 354	Speisequark 20%		Quark						1
 -	Sportsneaker-0486650	-						1
 -	Sporttasche-0502287	-						1
@@ -688,18 +690,18 @@
 -	Toilettenpapier		-						2
 -	Toilettenpapier 3lag	-						1
 -	Toilettenpapier 3lg.	-						1
-265	Tomaten Strauch		Tomate						50
-361	Tomatenmark		Tomatenmark					10
+265	Tomaten Strauch		Tomate						51
+361	Tomatenmark		Tomatenmark					11
 4	Tomatens. Basilikum	Nudelsauce (Rot)				7
 4	Tomatens.mit Basili	Nudelsauce (Rot)				4
 -	Tomatensuppe Toscana	-						1
 265	TomateStrau. kg		Tomate						9
 -	Topfreininger		-						1
-526	Tort. Ricotta-Spinat	Tortellini					10
+526	Tort. Ricotta-Spinat	Tortellini					11
 490	Tortellini Gnocchi	Gnocchi						2
 526	Tortelloni Ric.Spin.	Tortellini					3
 526	Tortelloni Ric.Spina	Tortellini					1
--	Tortilla Nacho Käse	-						1
+-	Tortilla Nacho Käse	-						2
 -	Trad.Hummus Pikant	-						1
 -	Trad.Kasselerbraten	-						1
 165	Traube rot 500g		Weintraube					1
@@ -761,7 +763,7 @@
 -	ZumDorfkr.Pudd.Scho.	-						1
 -	ZumDorfkrugPudd.Scho	-						1
 37	Zwiebel rotBiol		rote Zwiebel					1
-209	Zwiebel weiß		weiße Zwiebel					1
-211	Zwiebeln gelb		gelbe Zwiebel					3
+-	Zwiebel weiß		-						1
+-	Zwiebeln gelb		-						3
 37	Zwiebeln rot		rote Zwiebel					8
 -	Zwiebelzopf		-						1
