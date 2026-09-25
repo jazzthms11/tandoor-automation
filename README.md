@@ -57,6 +57,25 @@ Der Ordner ist zugleich der Stand: was dort liegt, wird nicht noch einmal geholt
 die Antwort der API unverändert, denn was ein Bon für den Bestand hergibt, entscheidet erst die
 Zuordnung, und ein Fehler dort soll keinen neuen Abruf kosten.
 
+### Kaufland
+
+Kaufland gibt nichts her, was sich abholen ließe: keine öffentliche API, und der Host der digitalen
+Bons ist certificate-pinned. Der Beleg kommt deshalb von Hand, als PDF aus der App geteilt, und
+wird eingeworfen:
+
+```bash
+uv run bon import-pdf ~/Downloads/beleg.pdf --dry-run   # zeigen, was abgelegt würde
+uv run bon import-pdf ~/Downloads/beleg.pdf             # ablegen nach bons/kaufland/
+```
+
+Die Datei wird kopiert, nicht verschoben, und liegt danach unter ihrer Bonnummer. Ein Beleg, der
+schon vorliegt, wird genannt und nicht überschrieben. Gelesen wird die Textebene über `pdftotext`
+aus poppler-utils; ein Beleg von vor Juli 2024 ist ein Bild ohne Textebene und geht nicht.
+
+Anders als bei Lidl kann beim Lesen einer Textspalte eine Zeile stillschweigend durchfallen. Der
+Parser rechnet deshalb die Positionen samt Rabatten gegen die gedruckte Summe und verweigert den
+Beleg, wenn beides nicht aufgeht.
+
 ### Zugang zu Lidl Plus
 
 Die App-API hängt an einem Refresh-Token. Ihn holt ein einmaliger Anmeldelauf:
@@ -81,7 +100,8 @@ irgendwann ab, stellt derselbe Befehl den Zugang wieder her.
 
 Lidl druckt `Gehackte Tomaten`, Tandoor führt `Stückige Tomaten (Konserve)`. Dass beides dasselbe
 meint, ist keine Ableitung, sondern eine Entscheidung. Sie steht in `zuordnung.tsv`, eine Zeile je
-Bonname.
+Bonname, über beide Läden hinweg: `Soja Schnetzel` bei Lidl und `Soja Granulat` bei Kaufland zeigen
+auf dasselbe Lebensmittel und werden im Bestand addiert.
 
 ```bash
 uv run bon map             # Datei auf den Stand der Bons bringen und gegen Tandoor prüfen
@@ -111,8 +131,8 @@ werden addiert, auch über Bons hinweg, und auf einen vorhandenen Eintrag aufges
 danebengelegt. Zusammengeführt wird über Lebensmittel und Einheit, nicht über den Ort: ein
 Eintrag, der woanders steht, ist umgeräumt worden, und dann gewinnt der echte Schrank.
 
-`--seit` grenzt ab, was noch im Haus steht. Beim ersten Lauf ist die Angabe nötig, sonst liefen
-alle 245 Bons in den Bestand. Ältere Bons gelten danach als abgehandelt und kommen nicht wieder.
+`--seit` grenzt ab, was noch im Haus steht. Beim ersten Lauf ist die Angabe nötig, sonst liefe
+die ganze Historie in den Bestand. Ältere Bons gelten danach als abgehandelt und kommen nicht wieder.
 
 Welche Bons gebucht sind, steht in `bons/.importiert`. Anders als beim Holen trägt die Ablage das
 nicht: ein gebuchter Bon sieht aus wie ein ungebuchter, und ein zweiter Lauf würde die Mengen

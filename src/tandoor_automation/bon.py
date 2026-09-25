@@ -3,6 +3,7 @@
 import argparse
 import json
 import re
+import subprocess
 from collections import Counter
 from collections.abc import Iterable
 from datetime import date
@@ -26,7 +27,7 @@ from tandoor_automation.lidl import (
 )
 from tandoor_automation.mapping import MAPPING_FILE, merge, parse_mapping, problems, render
 from tandoor_automation.models import InventoryLocation
-from tandoor_automation.receipts import Receipt, parse_lidl
+from tandoor_automation.receipts import Receipt, parse_kaufland, parse_lidl
 from tandoor_automation.shopping import INTERVALS_FILE, confirmed_until, parse_intervals
 from tandoor_automation.stock import (
     Addition,
@@ -39,7 +40,11 @@ from tandoor_automation.stock import (
 )
 from tandoor_automation.tandoor import TandoorClient
 
-BONS_DIR = Path("bons/lidl")
+LIDL_DIR = Path("bons/lidl")
+KAUFLAND_DIR = Path("bons/kaufland")
+"""Kaufland gibt nichts her, was sich abholen ließe. Sein Beleg kommt als PDF aus der App und
+wird hier eingeworfen; abgelegt wird die Datei unverändert, gelesen bei jedem Lauf neu."""
+PDFTOTEXT = "pdftotext"
 STATE_FILE = Path("bons/.importiert")
 """Welche Bons im Bestand angekommen sind. Anders als beim Holen trägt die Ablage das nicht:
 ein gebuchter Bon sieht aus wie ein ungebuchter, und ein zweiter Lauf würde die Mengen
@@ -56,13 +61,13 @@ def _known_ids() -> set[str]:
     Returns:
         Die IDs aller Bons, die schon vorliegen.
     """
-    return {path.stem.split("_", 1)[1] for path in BONS_DIR.glob("*_*.json")}
+    return {path.stem.split("_", 1)[1] for path in LIDL_DIR.glob("*_*.json")}
 
 
 def _target(summary: dict[str, Any]) -> Path:
     """Baut den Ablagepfad: das Datum sortiert den Ordner, die ID erkennt den Bon wieder."""
     day = str(summary.get("date") or "")[:10] or UNKNOWN_DATE
-    return BONS_DIR / f"{day}_{summary['id']}.json"
+    return LIDL_DIR / f"{day}_{summary['id']}.json"
 
 
 def _describe(summary: dict[str, Any]) -> str:
@@ -97,7 +102,7 @@ def _run_fetch(dry_run: bool) -> None:
         dry_run: Nur zeigen, was geholt würde.
     """
     known = _known_ids()
-    BONS_DIR.mkdir(parents=True, exist_ok=True)
+    LIDL_DIR.mkdir(parents=True, exist_ok=True)
     fetched = 0
     with LidlClient() as lidl:
         for summary in lidl.tickets():
@@ -119,8 +124,7 @@ def _run_fetch(dry_run: bool) -> None:
 def _receipt_names() -> Counter[str]:
     """Zählt, wie oft jeder Artikelname über alle abgelegten Bons hinweg vorkommt."""
     counts: Counter[str] = Counter()
-    for path in sorted(BONS_DIR.glob("*.json")):
-        receipt = parse_lidl(json.loads(path.read_text(encoding="utf-8")))
+    for receipt in _receipts():
         counts.update(item.name for item in receipt.items)
     return counts
 
@@ -158,11 +162,81 @@ def _run_map(catalogue: bool) -> None:
 
 
 def _receipts() -> list[Receipt]:
-    """Liest alle abgelegten Bons, den ältesten zuerst."""
+    """Liest alle abgelegten Bons beider Quellen, den ältesten zuerst."""
     parsed = [
-        parse_lidl(json.loads(p.read_text(encoding="utf-8"))) for p in BONS_DIR.glob("*.json")
+        parse_lidl(json.loads(p.read_text(encoding="utf-8"))) for p in LIDL_DIR.glob("*.json")
     ]
+    parsed += [parse_kaufland(_pdf_text(p)) for p in KAUFLAND_DIR.glob("*.pdf")]
     return sorted(parsed, key=lambda receipt: receipt.purchased_on)
+
+
+def _pdf_text(path: Path) -> str:
+    """Holt die Textebene eines PDF, die Spalten so wie gedruckt.
+
+    Gelesen wird mit `pdftotext` aus poppler-utils. Ein Fremdpaket dafür wäre eine Abhängigkeit
+    mehr für einen Aufruf, den das System schon kann.
+
+    Args:
+        path: Pfad des PDF.
+
+    Returns:
+        Der Text des Belegs.
+
+    Raises:
+        ValueError: Wenn die Datei fehlt oder `pdftotext` sie nicht lesen kann.
+    """
+    if not path.is_file():
+        raise ValueError("Datei nicht gefunden")
+    try:
+        done = subprocess.run(
+            [PDFTOTEXT, "-layout", str(path), "-"], capture_output=True, text=True, check=True
+        )
+    except FileNotFoundError as missing:
+        raise ValueError(f"{PDFTOTEXT} fehlt, steckt in poppler-utils") from missing
+    except subprocess.CalledProcessError as broken:
+        raise ValueError(f"{PDFTOTEXT} bricht ab: {broken.stderr.strip()}") from broken
+    return done.stdout
+
+
+def _run_import(paths: list[Path], dry_run: bool) -> None:
+    """Liest Kaufland-Belege und legt sie unter ihrer Bonnummer ab.
+
+    Die Datei wird kopiert, nicht verschoben: das Original bleibt dort liegen, wo die App es
+    abgelegt hat. Ein Beleg, der schon vorliegt, wird genannt und nicht überschrieben.
+
+    Args:
+        paths: Pfade der PDF-Belege.
+        dry_run: Nur zeigen, was abgelegt würde.
+    """
+    KAUFLAND_DIR.mkdir(parents=True, exist_ok=True)
+    added, failed = 0, 0
+    for path in paths:
+        try:
+            added += _import_pdf(path, dry_run)
+        except ValueError as problem:
+            failed += 1
+            print(f"{path.name}: {problem}")
+    print(f"{added} neue Belege, {failed} nicht lesbar")
+    if failed:
+        raise SystemExit(1)
+
+
+def _import_pdf(path: Path, dry_run: bool) -> int:
+    """Legt einen Beleg ab und sagt über den Rückgabewert, ob er neu war."""
+    receipt = parse_kaufland(_pdf_text(path))
+    target = KAUFLAND_DIR / f"{receipt.receipt_id}.pdf"
+    line = (
+        f"{receipt.purchased_on}  {receipt.store}  {len(receipt.items)} Positionen  {target.name}"
+    )
+    if target.exists():
+        print(f"liegt schon vor: {line}")
+        return 0
+    if dry_run:
+        print(f"würde ablegen: {line}")
+        return 1
+    target.write_bytes(path.read_bytes())
+    print(f"abgelegt: {line}")
+    return 1
 
 
 def _imported() -> set[str]:
@@ -286,6 +360,9 @@ def main() -> None:
     commands.add_parser("login", help="Einmalig den Zugang zu Lidl Plus herstellen")
     fetch = commands.add_parser("fetch", help="Bons aus Lidl Plus holen, die noch fehlen")
     fetch.add_argument("--dry-run", action="store_true", help="Nur zeigen, was geholt würde")
+    imports = commands.add_parser("import-pdf", help="Kaufland-Belege als PDF einlesen")
+    imports.add_argument("dateien", type=Path, nargs="+", help="Pfade der PDF-Belege")
+    imports.add_argument("--dry-run", action="store_true", help="Nur zeigen, was abgelegt würde")
     mapping = commands.add_parser("map", help=f"Bonnamen in {MAPPING_FILE} zuordnen")
     mapping.add_argument(
         "--katalog",
@@ -307,6 +384,8 @@ def main() -> None:
             _run_map(args.katalog)
         elif args.command == "apply":
             _run_apply(args.seit, args.dry_run)
+        elif args.command == "import-pdf":
+            _run_import(args.dateien, args.dry_run)
         else:
             _run_fetch(args.dry_run)
     except LidlAuthError as problem:
