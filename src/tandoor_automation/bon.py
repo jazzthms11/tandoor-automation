@@ -28,7 +28,15 @@ from tandoor_automation.mapping import MAPPING_FILE, merge, parse_mapping, probl
 from tandoor_automation.models import InventoryLocation
 from tandoor_automation.receipts import Receipt, parse_lidl
 from tandoor_automation.shopping import INTERVALS_FILE, confirmed_until, parse_intervals
-from tandoor_automation.stock import Addition, additions, describe, payload, twin, undecided
+from tandoor_automation.stock import (
+    Addition,
+    additions,
+    dangling,
+    describe,
+    payload,
+    twin,
+    undecided,
+)
 from tandoor_automation.tandoor import TandoorClient
 
 BONS_DIR = Path("bons/lidl")
@@ -213,8 +221,10 @@ def _book(receipts: list[Receipt], mapping: dict[str, int | None], dry_run: bool
         dry_run: Nur zeigen, was gebucht würde.
     """
     with TandoorClient(Settings()) as tandoor:
+        catalogue = tandoor.foods()
+        _check_mapping(receipts, mapping, {food.id for food in catalogue})
         foods = stock_foods(
-            tandoor.foods(),
+            catalogue,
             parse_categories(CLASSES_FILE.read_text(encoding="utf-8")),
             parse_exceptions(EXCEPTIONS_FILE.read_text(encoding="utf-8")),
         )
@@ -245,6 +255,16 @@ def _book(receipts: list[Receipt], mapping: dict[str, int | None], dry_run: bool
                     )
                 )
                 print(f"neu: {describe(addition)}")
+
+
+def _check_mapping(receipts: list[Receipt], mapping: dict[str, int | None], ids: set[int]) -> None:
+    """Hält den Lauf an, wenn ein zugeordnetes Lebensmittel in Tandoor gelöscht wurde."""
+    gone = dangling(receipts, mapping, ids)
+    for name in gone:
+        print(f"{name}: Lebensmittel {mapping[name]} gibt es nicht mehr")
+    if gone:
+        print(f"Erst {MAPPING_FILE} berichtigen: bon map")
+        raise SystemExit(1)
 
 
 def _check(

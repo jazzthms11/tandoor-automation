@@ -17,7 +17,7 @@ from tandoor_automation.classes import (
 )
 from tandoor_automation.models import Food, InventoryEntry
 from tandoor_automation.receipts import Receipt, ReceiptItem
-from tandoor_automation.stock import Addition, additions, twin, undecided
+from tandoor_automation.stock import Addition, additions, dangling, twin, undecided
 
 KLASSEN = """# Kommentar
 frisch\t-\tObst und Gemüse
@@ -120,3 +120,11 @@ def test_zusammengefuehrt_wird_ueber_lebensmittel_und_einheit_nicht_ueber_den_or
     units = {"Stück": 14, "kg": 10}
     assert twin(stueck, entries, units) == 7
     assert twin(unbekannt, entries, units) is None
+
+
+def test_geloeschte_zuordnung_wird_gemeldet():
+    bon = _receipt("2026-09-01", [("Zwiebeln gelb", "1", "stk"), ("Gurken", "1", "stk")])
+    mapping: dict[str, int | None] = {"Zwiebeln gelb": 211, "Gurken": 109, "Pfand": None}
+    ids = {food.id for food in FOODS}
+    assert dangling([bon], mapping, ids) == ["Zwiebeln gelb"]
+    assert dangling([bon], {"Gurken": 109, "Pfand": None}, ids) == []

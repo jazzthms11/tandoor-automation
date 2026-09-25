@@ -46,6 +46,27 @@ def undecided(receipts: list[Receipt], mapping: dict[str, int | None]) -> list[s
     return sorted(names - set(mapping))
 
 
+def dangling(receipts: list[Receipt], mapping: dict[str, int | None], ids: set[int]) -> list[str]:
+    """Sucht die Artikelnamen, deren Lebensmittel es in Tandoor nicht mehr gibt.
+
+    Eine gelöschte ID sieht für `additions` aus wie ein Lebensmittel ohne Bestand und fällt
+    genauso stumm heraus. Sie ist aber eine Entscheidung, die nicht mehr aufgeht, und darf den
+    Zugang nicht verschlucken.
+
+    Args:
+        receipts: Die zu buchenden Bons.
+        mapping: Lebensmittel-ID je Bonname, `None` für verworfen.
+        ids: Die IDs, die Tandoor kennt.
+
+    Returns:
+        Die betroffenen Namen, jeder einmal, alphabetisch.
+    """
+    names = {item.name for receipt in receipts for item in receipt.items}
+    return sorted(
+        name for name in names if (food_id := mapping.get(name)) is not None and food_id not in ids
+    )
+
+
 def additions(
     receipts: list[Receipt], mapping: dict[str, int | None], foods: dict[int, StockFood]
 ) -> list[Addition]:
