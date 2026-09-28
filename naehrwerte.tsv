@@ -1,0 +1,115 @@
+# Zucker und Ballaststoffe fuer die Lebensmittel, die keine FDC-Nummer haben. Die 103 mit
+# Nummer holt `naehrwerte.py` selbst, diese 50 hier nicht. Zu pruefen sind die ersten beiden
+# Spalten `zucker` und `ballaststoffe`, beide in Gramm.
+#
+# Vorbelegt sind Standardwerte handelsueblicher Produkte, keine Messung an deiner Packung.
+# Der erste Block weicht je Hersteller deutlich ab und gehoert nachgesehen, der zweite ist
+# unkritisch: Wasser, Fleisch und Gewuerze tragen kaum Zucker und keine Ballaststoffe.
+#
+# Leere Zelle heisst: noch nicht entschieden, haelt den Lauf an. Eine 0 dagegen ist eine
+# Aussage und heisst: dieses Lebensmittel traegt davon nichts.
+#
+# Die Werte gelten je `basis`, nicht je 100 g. Wo die Basis ein Stueck oder ein Bund ist, ist
+# der Wert fuer das ganze Stueck gemeint. `basis` und `kalorien` sind Lesehilfen und werden
+# nicht gelesen: die Kalorien zeigen, auf welche Menge sich die Zeile bezieht.
+#
+# Nach dem Schreiben nach Tandoor ist die Datei erledigt, Korrekturen gehen dann in Tandoors
+# Oberflaeche.
+#
+# Spalten: id, zucker, ballaststoffe, basis, kalorien, name
+
+
+# --- Packung entscheidet, bitte pruefen ---
+494	1	3	100 g	380	Cornflakes
+587	7	16	100 g	380	Mandelmehl
+426	8	14	100 g	327	Sojagranulat
+405	8	0	1 Pck.	128	Vanillepuddingpulver
+402	98	0	100 g	394	Vanillinzucker
+411	1.5	0	30 g	112	Whey Protein Vanille
+586	20	11	100 g	614	Zartbitterschokolade
+536	62	0	100 g	300	Zuckerrübensirup
+595	1	3	100 g	225	Schinken Veggie
+457	2	0	100 g	100	Frischhefe
+505	7	15	100 g	300	Kümmel
+423	1	7	100 g	100	Kidneybohnen
+
+# --- Standardwerte ---
+514	0.5	0	100 ml	10	Bratenfond
+470	4	1	1 Stück	140	Brioche-Burgerbrötchen
+464	3	3	100 g	360	Cannelloni
+503	1.4	1	100 g	13	Chinakohl
+448	2	2.5	100 g	240	Ciabatta
+480	2	3	100 g	232	Fladenbrot
+490	1	2	100 g	150	Gnocchi
+596	0.5	0	100 g	258	Gratinkäse
+462	0	0	100 g	500	Guanciale
+475	0	0	100 ml	0	Gurkenwasser
+506	0.1	0	100 g	116	Harzer Käse
+446	3	2.5	100 g	41	Kaisergemüse (TK)
+424	4.7	2.8	100 g	41	Karotte
+434	2	4	1 Stück	50	Kopfsalat
+472	0	0	1 Scheiben	75	Käse
+431	3	3	100 g	349	Lasagneblätter
+504	2	2.5	100 g	330	Mie Nudeln
+606	4.8	0	100 g	47	Milch
+432	1	0	100 g	243	Mozzarella
+501	3	4	100 g	350	Paniermehl
+400	0	0	100 g	0	Paprikapulver
+488	1	1.5	100 g	192	Pelmeni
+552	3	1.5	100 g	25	Peperoni
+425	0	0	100 g	0	Rinderbrühe
+438	0	0	100 g	109	Rindergulasch
+477	0.5	1.5	100 g	350	Risotto-Reis
+489	0.5	1	100 g	188	Räuchertofu
+435	0	0	100 g	0	Salatkräuter
+455	3	0	100 g	241	Schmand
+454	0	0	1 Bund	0	Schnittlauch
+508	0	0	100 g	122	Schweinefilet
+479	4	0	100 g	60	Skyr
+461	3.5	3	100 g	370	Spaghetti
+500	0	0	100 g	355	Speisestärke
+449	1.5	1.5	100 g	130	Spätzle
+526	2.5	2.5	100 g	199	Tortellini
+445	0.1	0	100 g	370	geriebener Emmentaler
+515	0	0	100 g	0	grüner Pfeffer
+
+# --- aus FDC ergaenzt: ein Wert stand im Datensatz, der andere fehlte ---
+#
+# Uebernommen ist der Wert, den FDC fuehrt, gerundet. Der fehlende ist ein Standardwert.
+# Die Zeile gewinnt gegen FDC, geprueft gehoert deshalb auch die uebernommene Spalte.
+2	0.6	0	100 g	717	Butter
+51	2	1.72	100 g	23	Champignon weiß
+16	0.33	0	100 g	408	Cheddar
+49	4.86	2	100 g	36	Erdbeere
+30	9	6.32	100 g	613	Erdnussbutter cremig
+28	0	0	100 g	0	Essig
+41	40	0	100 g	88	Essig Balsamico
+371	0.6	0.6	100 g	145	Fester Tofu
+15	1.63	0	100 g	260	Feta
+17	3.2	0	100 g	210	Frischkäse
+103	0	0	100 g	260	Garam Masala
+109	1.7	0.5	100 g	15	Gurke
+112	2.68	6.5	100 g	40	Himbeeren
+10	0	0	100 g	166	Hähnchenbrust
+47	4	0	100 g	265	Joghurt
+375	0.65	2.1	100 g	70	Kartoffel
+57	1	7	100 g	400	Kernige Haferflocken
+27	11	0.3	100 g	117	Ketchup
+9	1	2.7	100 g	143	Knoblauch
+42	3.2	0	100 ml	87	Kochsahne
+132	1	1	100 g	197	Kokosnussmilch
+281	2.25	10.5	100 g	0	Kreuzkümmel
+227	1.4	5.08	100 g	350	Kürbiskerne
+286	0	26.3	100 g	313	Lorbeerblatt
+370	4.2	1.16	100 g	35	Paprika, rot
+45	0.64	0	100 g	392	Parmesan
+35	3	0	100 g	157	Ricotta
+376	0	0	100 g	276	Rinderhack
+235	0	14.1	100 g	131	Rosmarin
+391	0	0	100 g	0	Salz
+5	2.9	3.3	100 g	0	Senf
+261	1.7	14	100 g	101	Thymian
+305	1	10.6	100 g	370	Vollkornmehl
+31	99.8	0	100 g	385	Zucker
+81	0.8	1.3	100 g	15	grüner Salat
+23	4.1	0	100 g	84	körniger Frischkäse

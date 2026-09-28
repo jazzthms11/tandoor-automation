@@ -172,3 +172,30 @@ ein Gericht darf: 5 geht quasi immer, 3 nur wenn es lange her ist, 1 nie, 0 hei�
 Tandoor hat dafür kein eigenes Feld, es mittelt die Noten im Kochprotokoll. `plan rate` hält
 deshalb genau einen Eintrag je Rezept vor und ändert ihn, statt einen zweiten anzulegen. Die Datei
 ist die Quelle: wer in Tandoors Oberfläche bewertet, verzieht den Durchschnitt.
+
+## Nährwerte
+
+Tandoor rechnet die Nährwerte eines Rezepts selbst, aus den Eigenschaften seiner Lebensmittel. Vier
+Typen kommen aus dem Open Data Projekt, Zucker und Ballaststoffe fehlen dort und werden einmalig
+nachgetragen:
+
+```bash
+uv run python naehrwerte.py --dry-run   # zeigen, was geschrieben würde
+uv run python naehrwerte.py             # Typen anlegen und Werte schreiben
+```
+
+Drei Quellen. Die Lebensmittel mit `fdc_id` holt das Skript aus der FDC-Datenbank des USDA, dafür
+braucht es einen Schlüssel von [api.data.gov](https://fdc.nal.usda.gov/api-key-signup) in der
+`.env`. Die ohne Nummer stehen in `naehrwerte.tsv`, von Hand. Und die Lebensmittel, die selbst ein
+Rezept sind, rechnet das Skript aus ihrer Rezeptsumme; das muss zuletzt laufen.
+
+FDC führt Zucker in vielen Datensätzen nicht, in Foundation-Daten außerdem unter einer anderen
+Nummer als sonst. Was unvollständig zurückkommt, schreibt das Skript nicht als 0, sondern nennt es
+als fertige Zeile für `naehrwerte.tsv` und hält an. Der Lauf ist deshalb einer je Durchsicht, und
+wiederholbar: geschrieben wird immer die vollständige Eigenschaftsliste.
+
+Tandoors eigener FDC-Knopf am Lebensmittel taugt dafür nicht. Er überschreibt die vier vorhandenen
+Werte mit, setzt die Basis hart auf 100 g und kennt nur die eine Zuckernummer.
+
+Ein Lebensmittel ohne Wert hält nicht nur sich selbst auf: Tandoor meldet das ganze Rezept als
+unvollständig. Am Ende des Laufs wird deshalb jedes Rezept nachgerechnet.

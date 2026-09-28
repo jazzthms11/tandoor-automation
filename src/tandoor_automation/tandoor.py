@@ -330,6 +330,67 @@ class TandoorClient:
         )
         response.raise_for_status()
 
+    def foods_raw(self) -> list[dict]:
+        """Holt die Lebensmittel unbeschnitten.
+
+        `Food` greift nur Name und Kategorie heraus. Eigenschaften, ihre Basis, die FDC-Nummer
+        und die Verknüpfung zu einem Rezept stehen deshalb nur hier.
+
+        Returns:
+            Alle Lebensmittel, wie Tandoor sie ausgibt.
+        """
+        return list(self._pages("/api/food/", {}))
+
+    def property_types(self) -> list[dict]:
+        """Holt die Eigenschaftstypen der Instanz.
+
+        Returns:
+            Alle Typen mit Name, Einheit und FDC-Nummer.
+        """
+        return list(self._pages("/api/property-type/", {}))
+
+    def create_property_type(self, body: dict[str, object]) -> dict:
+        """Legt einen Eigenschaftstyp an.
+
+        Args:
+            body: Name, Einheit und FDC-Nummer.
+
+        Returns:
+            Der angelegte Typ, wie Tandoor ihn führt.
+        """
+        response = self._client.post("/api/property-type/", json=body)
+        response.raise_for_status()
+        return response.json()
+
+    def set_food_properties(self, food_id: int, properties: list[dict[str, object]]) -> None:
+        """Schreibt die Eigenschaften eines Lebensmittels.
+
+        Die Liste muss vollständig sein: was darin fehlt, löscht Tandoor am Lebensmittel. Ein
+        Eintrag mit `id` wird fortgeschrieben, einer ohne neu angelegt.
+
+        Args:
+            food_id: Das Lebensmittel.
+            properties: Alle Eigenschaften des Lebensmittels.
+        """
+        response = self._client.patch(f"/api/food/{food_id}/", json={"properties": properties})
+        response.raise_for_status()
+
+    def recipe_properties(self, recipe_id: int) -> dict:
+        """Holt die gerechneten Nährwerte eines Rezepts.
+
+        Gerechnet wird in Tandoor: `food_properties` summiert die Zutaten je Eigenschaftstyp und
+        meldet über `missing_value`, wenn eine Zutat aus der Summe gefallen ist.
+
+        Args:
+            recipe_id: Das Rezept.
+
+        Returns:
+            Ein Eintrag je Eigenschaftstyp, mit Summe, Einzelwerten und Fehlermeldung.
+        """
+        response = self._client.get(f"/api/recipe/{recipe_id}/")
+        response.raise_for_status()
+        return response.json().get("food_properties", {})
+
     def _pages(self, path: str, params: dict[str, str]) -> Iterator[dict]:
         """Läuft eine paginierte Liste durch und gibt die Einträge einzeln aus.
 
