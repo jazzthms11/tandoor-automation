@@ -164,12 +164,39 @@ Abendessen. Die Daten sind reine Tage ohne Uhrzeit, die Uhrzeit setzt später `p
 Mahlzeit ein. `recipe_name` muss genau der Name aus dem Bündel sein, er ist die Sicherung gegen
 eine vertauschte ID. `note` darf leer bleiben.
 
+## Was `plan apply` daraus macht
+
+Was in Tandoor steht, sieht anders aus als der Vorschlag, und das ist Absicht.
+
+- **Die beiden Mittagsgerichte werden entfaltet**: aus zwei Einträgen über Montag bis Freitag
+  werden zehn, einer je Tag und Esser zu einer Portion. Nur so steht im Plan, wer an welchem Tag
+  welches der beiden Gerichte isst, und nur daraus lassen sich die Nährwerte eines Tages rechnen
+- **`plan apply` fragt vorher**, welches der beiden Gerichte Leo dreimal isst. Fünf Tage gehen
+  nicht glatt auf zwei Gerichte auf, und diese Antwort ist eine Entscheidung
+- **Jeder Eintrag mit Rezept trägt die Esser** als `@leo` und `@jazz` in der ersten Zeile seiner
+  `note`, ein geteiltes Abendessen beide. Deine `note` rutscht darunter und bleibt erhalten
+- **Ein Eintrag ohne Rezept bekommt keine Marke.** An einem Termin wird gegessen, aber nicht aus
+  der eigenen Küche
+
+**Entfalte nicht selbst.** Der Vorschlag trägt die beiden Mittagsgerichte als je einen Eintrag
+über die Arbeitswoche, wie in der Tabelle oben. Zehn fast gleiche Einträge von Hand zu schreiben
+ist genau die Wiederholung, bei der ein Modell verrutscht, und die Marken setzt der Code.
+
+In der `history` des Bündels stehen vergangene Mittagessen deshalb als Tageseinträge, ein Gericht
+also mehrfach in derselben Woche. Für den Abstand zählt trotzdem die Woche, in der es stand, und
+nicht die Zahl seiner Einträge.
+
 ## Was geprüft wird
 
 `plan check` prüft, ob es das Rezept und die Mahlzeit gibt, ob Name und ID zusammenpassen, ob der
 Zeitraum in der Woche liegt, ob ein belegter Platz überschrieben würde und ob an jedem Tag für
 beide Mahlzeiten mindestens zwei Portionen eingeplant sind. Ein Eintrag ohne Rezept zählt dabei
 als versorgt und braucht keine Portionen, muss aber einen Titel tragen.
+
+`plan apply` prüft zusätzlich die Anteile der entfalteten Form: ein Eintrag muss so viele Portionen
+am Tag tragen, wie Esser an ihm stehen. Das trifft die beiden Mittagsgerichte über ungleiche
+Zeiträume, etwa das eine von Montag bis Freitag und das andere bis Donnerstag. Sie decken die Woche,
+bilden aber keinen geteilten Platz mehr, und jeder Anteil wäre still halbiert.
 
 Alles andere prüfst du selbst, bevor du Leo den Plan zeigst: die Bewertung, vegetarisch, Eiweiß,
 die Mischung aus Reis und Nudeln, die Abwechslung gegen die Historie und der Aufwand an den
@@ -194,7 +221,8 @@ Sagt Leo, so passe es, dann schreibt `uv run plan apply vorschlag/<woche>.json` 
 Tandoor. Der Befehl prüft noch einmal gegen den Stand, wie er jetzt in Tandoor ist, und legt nur
 an, was dort noch fehlt. Ein zweiter Lauf schreibt deshalb nichts doppelt, und ein einzelner
 nachgebesserter Eintrag lässt sich mit demselben Befehl nachschieben. `--dry-run` zeigt vorher, was
-er tun würde und löscht die Datei nicht. Ohne `--dry-run` löscht `plan apply` die Vorschlagsdatei
+er tun würde und löscht die Datei nicht; die Frage nach der Aufteilung der Mittagessen stellt er
+auch dann. Ohne `--dry-run` löscht `plan apply` die Vorschlagsdatei
 nach dem Schreiben, Tandoor ist danach die einzige Wahrheit.
 
 Was schon in Tandoor steht, ändert `plan apply` nicht. Soll ein bereits geschriebener Eintrag weg

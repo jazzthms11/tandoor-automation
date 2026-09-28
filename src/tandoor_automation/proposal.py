@@ -8,12 +8,17 @@ gut ist, also abwechslungsreich, eiweißreich und vegetarisch, entscheidet das M
 
 from datetime import date
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from tandoor_automation.bundle import SPILLOVER, PlanBundle
 from tandoor_automation.models import MealType
 
-HOUSEHOLD = 2
+MARKS = ("@leo", "@jazz")
+"""Die Esser des Haushalts, in der Reihenfolge ihrer Wahl beim Entfalten.
+
+`plan apply` schreibt diese Marken in die erste Zeile der `note` jedes Planeintrags. Wer die
+Nährwerte eines Tages liest, findet daran seinen Anteil, ohne die Größe des Haushalts zu kennen."""
+HOUSEHOLD = len(MARKS)
 TOLERANCE = 0.01
 
 
@@ -28,6 +33,9 @@ class ProposalEntry(BaseModel):
     Ein Eintrag ohne Rezept trägt stattdessen einen `title` und keine Portionen. So sieht ein Platz
     aus, an dem zwar gegessen wird, aber nicht aus der eigenen Küche: Besuch, auswärts, Urlaub.
     Tandoor kennt solche Einträge, im Plan steht dann nur der Titel.
+
+    `marks` bleibt im Vorschlag leer: die Esser setzt `plan apply` beim Entfalten ein, nicht der
+    Wähler.
     """
 
     recipe_id: int | None = None
@@ -38,6 +46,7 @@ class ProposalEntry(BaseModel):
     to_date: date
     servings: float = 0
     note: str = ""
+    marks: list[str] = Field(default_factory=list)
 
 
 class Proposal(BaseModel):
@@ -52,7 +61,7 @@ def _label(entry: ProposalEntry) -> str:
     return entry.recipe_name or entry.title or f"Eintrag am {entry.from_date}"
 
 
-def _portions_per_day(entry: ProposalEntry) -> float:
+def portions_per_day(entry: ProposalEntry) -> float:
     """Verteilt die Portionen eines Eintrags gleichmäßig auf seine Tage."""
     return entry.servings / ((entry.to_date - entry.from_date).days + 1)
 
@@ -145,7 +154,7 @@ def _coverage_problems(proposal: Proposal, bundle: PlanBundle) -> list[str]:
             if _is_occupied(bundle, meal_type, day) or _is_booked(proposal, meal_type, day):
                 continue
             served = sum(
-                _portions_per_day(entry)
+                portions_per_day(entry)
                 for entry in proposal.entries
                 if entry.meal_type_id == meal_type.id and entry.from_date <= day <= entry.to_date
             )

@@ -5,12 +5,16 @@ from datetime import date
 from pathlib import Path
 
 from tandoor_automation.apply import (
+    Slot,
     clearable,
     describe,
     describe_meal,
     match_existing,
     meal_type_of,
     payload,
+    share_problems,
+    split_groups,
+    unfold,
     without,
 )
 from tandoor_automation.bundle import (
@@ -31,7 +35,7 @@ from tandoor_automation.classes import (
 )
 from tandoor_automation.config import Settings
 from tandoor_automation.models import PlannedMeal
-from tandoor_automation.proposal import Proposal, validate_proposal
+from tandoor_automation.proposal import MARKS, Proposal, validate_proposal
 from tandoor_automation.rating import (
     changes,
     own_base_ratings,
@@ -126,6 +130,10 @@ def _run_apply(path: Path, dry_run: bool) -> None:
     wie er jetzt ist, nicht gegen den, wie er beim Wählen war. Ist die Woche danach vollständig in
     Tandoor, ist die Datei überflüssig: Tandoor ist die einzige Wahrheit, sie wird gelöscht.
 
+    Geschrieben wird nicht der Vorschlag selbst, sondern seine entfaltete Form: ein geteilter Platz
+    zerfällt in einen Eintrag je Tag und Esser, und jeder Eintrag mit Rezept trägt die Marken seiner
+    Esser. Auch `--dry-run` fragt deshalb vorher nach der Aufteilung.
+
     Args:
         path: Pfad der Vorschlagsdatei.
         dry_run: Nur zeigen, was geschrieben würde.
@@ -133,8 +141,10 @@ def _run_apply(path: Path, dry_run: bool) -> None:
     proposal = _read_proposal(path)
     with TandoorClient(Settings()) as tandoor:
         bundle = build_bundle(tandoor, proposal.week)
-        matches = match_existing(proposal, bundle)
-        _report(validate_proposal(proposal, without(bundle, [twin for _, twin in matches if twin])))
+        plan = unfold(proposal, _ask_leads(proposal, bundle))
+        matches = match_existing(plan, bundle)
+        rest = without(bundle, [twin for _, twin in matches if twin])
+        _report(validate_proposal(plan, rest) + share_problems(plan))
         for entry, twin in matches:
             meal_type = meal_type_of(bundle, entry)
             line = describe(entry, meal_type)
@@ -147,6 +157,50 @@ def _run_apply(path: Path, dry_run: bool) -> None:
                 print(f"geschrieben: {line}")
     if not dry_run:
         path.unlink()
+
+
+def _ask_leads(proposal: Proposal, bundle: PlanBundle) -> dict[Slot, int]:
+    """Fragt für jeden geteilten Platz, mit welchem Gericht der erste Esser anfängt.
+
+    Gefragt wird nur bei einer ungeraden Zahl von Tagen. Nur dann kommt eines der Gerichte öfter
+    auf denselben Teller als das andere, und nur dann ist die Antwort eine Entscheidung. Ohne
+    Terminal im Rücken und bei leerer Eingabe fängt der erste Esser mit dem ersten Gericht an.
+
+    Args:
+        proposal: Der Vorschlag des Wählers, noch nicht entfaltet.
+        bundle: Das Bündel derselben Woche, für die Namen der Mahlzeiten.
+
+    Returns:
+        Je gefragtem Platz das gewählte Gericht als Platz in seiner Gruppe.
+    """
+    names = {meal_type.id: meal_type.name for meal_type in bundle.meal_types}
+    leads = {}
+    for slot, group in split_groups(proposal).items():
+        meal_type_id, start, end = slot
+        days = (end - start).days + 1
+        if days % len(group) == 0:
+            continue
+        times = -(-days // len(group))
+        print(f"\n{names.get(meal_type_id, meal_type_id)} {start} bis {end}, {days} Tage")
+        print(f"  Welches Gericht isst {MARKS[0]} {times}-mal?")
+        for index, entry in enumerate(group):
+            print(f"  {index} {entry.recipe_name}")
+        leads[slot] = _read_lead(len(group))
+    return leads
+
+
+def _read_lead(count: int) -> int:
+    """Liest eine Antwort, bis sie zu den Gerichten passt. Leer heißt: das erste."""
+    while True:
+        try:
+            answer = input("  > ").strip()
+        except EOFError:
+            return 0
+        if not answer:
+            return 0
+        if answer.isdigit() and int(answer) < count:
+            return int(answer)
+        print(f"  0 bis {count - 1}, oder leer für das erste")
 
 
 def _run_clear(week: str | None, ids: list[int], dry_run: bool) -> None:

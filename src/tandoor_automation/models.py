@@ -96,10 +96,15 @@ class PlannedMeal(BaseModel):
     `from_date` und `to_date` sind deshalb nicht zwingend derselbe Tag.
 
     Beide Daten tragen die Uhrzeit der Mahlzeit, Mittagessen etwa 12:00 in lokaler Zeitzone.
+
+    In der ersten Zeile der `note` stehen die Esser als Marken, siehe `proposal.MARKS`. Sie machen
+    den Eintrag erst eindeutig: zwei Mittagessen desselben Tages unterscheiden sich sonst nur im
+    Rezept, und wer welches isst, steht nirgends sonst.
     """
 
     id: int
     title: str = ""
+    note: str = ""
     from_date: datetime
     to_date: datetime
     meal_type_name: str
@@ -110,6 +115,12 @@ class PlannedMeal(BaseModel):
     servings: float
     created_by: int | None = None
     """Wer den Eintrag angelegt hat. Die Instanz ist geteilt, und gelöscht wird nur Eigenes."""
+
+    @field_validator("note", mode="before")
+    @classmethod
+    def _no_note(cls, value: str | None) -> str:
+        """Macht aus der fehlenden Notiz eine leere, Tandoor liefert sie als `null`."""
+        return value or ""
 
     @field_validator("recipe_id", mode="before")
     @classmethod
