@@ -9,8 +9,8 @@ Tandoor. Das Vorhaben und seine Begründungen stehen im Vault unter
 - **Etappe 1 ist der Wochenplaner.** Holen, Projizieren, Prüfen und Schreiben stehen im Code,
   die Wahl der Gerichte macht ein Modell
 - **Zwei Einstiegspunkte:** `plan bundle` gibt das Kontextbündel aus, `plan apply` validiert und
-  schreibt nach `/api/meal-plan/`. Dazwischen sitzt der Wähler, im Gespräch Claude über den Skill
-  unter `.claude/skills/`, im späteren Cron-Lauf Gemini
+  schreibt nach `/api/meal-plan/`. Dazwischen wählt Claude im Gespräch über den Skill unter
+  `.claude/skills/`
 - **Regeln, die prüfbar sind, prüft der Code.** Das Modell entscheidet nur, was zusammenpasst
 - **Etappe 2 ist der Bestand**, erst danach und nicht parallel
 
