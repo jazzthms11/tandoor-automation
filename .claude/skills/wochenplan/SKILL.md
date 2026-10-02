@@ -15,10 +15,13 @@ die Wahl triffst du.
 2. Lies das Bündel. Es enthält die sieben Tage, die Mahlzeiten mit ihren Uhrzeiten, die schon
    belegten Plätze (`occupied`), acht Wochen Planhistorie (`history`) und das ganze Kochbuch
    samt Grundbewertung (`rating`)
-3. Wähle die Gerichte und schreib `vorschlag/<woche>.json` nach dem Schema unten
-4. `uv run plan check vorschlag/<woche>.json`. Bessere nach, bis der Befehl sauber durchläuft
-5. Zeig Leo die Woche als Tabelle im Gespräch und sag in zwei, drei Zeilen, warum diese Gerichte
-6. Erst wenn Leo zustimmt: `uv run plan apply vorschlag/<woche>.json` schreibt die Woche nach
+3. Frag Leo in einer Nachricht, ob für die Woche etwas zu beachten ist, siehe *Hinweise zur
+   Woche*. **Beende damit deinen Zug** und wähle erst nach der Antwort
+4. Wähle die Gerichte und schreib `vorschlag/<woche>.json` nach dem Schema unten
+5. `uv run plan check vorschlag/<woche>.json`. Bessere nach, bis der Befehl sauber durchläuft
+6. Zeig Leo die Woche als Tabelle im Gespräch und sag in zwei, drei Zeilen, warum diese Gerichte.
+   Hat Leo etwas zur Woche gesagt, nenn in einer Zeile, was du daraus gemacht hast
+7. Erst wenn Leo zustimmt: `uv run plan apply vorschlag/<woche>.json` schreibt die Woche nach
    Tandoor. Von dir aus schreibst du **nicht**, der Vorschlag ist bis dahin nur eine Datei
 
 ## Der Haushalt
@@ -230,11 +233,22 @@ nach dem Schreiben, Tandoor ist danach die einzige Wahrheit.
 Was schon in Tandoor steht, ändert `plan apply` nicht. Soll ein bereits geschriebener Eintrag weg
 oder anders aussehen, gehört das in Tandoors Oberfläche; sag Leo das, statt es zu umgehen.
 
-## Hinweise beim Aufruf
+## Hinweise zur Woche
 
-Der Skill lässt sich mit einem Zusatz starten, etwa `/wochenplan dieses Wochenende wenig Zeit` oder
-`/wochenplan W41, Samstag Besuch`. Ein solcher Hinweis gilt vor den Regeln oben. Er beschreibt den
-Fall dieser Woche, und die Regeln beschreiben nur den Normalfall.
+Ein Hinweis kommt auf zwei Wegen: als Zusatz beim Aufruf, etwa `/wochenplan dieses Wochenende
+wenig Zeit` oder `/wochenplan W41, Samstag Besuch`, oder als Antwort auf die Frage aus Schritt 3.
+Er gilt vor den Regeln oben. Er beschreibt den Fall dieser Woche, und die Regeln beschreiben nur
+den Normalfall.
+
+Die Frage stellst du auch dann, wenn der Aufruf schon einen Hinweis trug, denn vergessen wird
+gerade das, woran beim Aufruf niemand gedacht hat. Sie ist eine offene Frage im Gespräch, keine
+Auswahl, und nennt Woche, Zeitraum und die schon belegten Plätze aus `occupied`:
+
+> W41 (Sa 03.10. bis Fr 09.10.). In Tandoor steht schon: Mi Abend „Essen bei Eltern“.
+> Muss ich etwas beachten? Etwa Mahlzeiten, die ausfallen (Wochenende weg, Besuch, auswärts),
+> Gäste, Reste, die weg müssen, oder Wünsche.
+
+Ist nichts belegt, fällt der Satz dazu weg. Ein „nein“ heißt Normalfall.
 
 - **Eine Woche** (`W41`, `übernächste Woche`) → `plan bundle --week` entsprechend aufrufen
 - **Wenig Zeit an einem Kochtag** → dort Rezepte mit kurzer `working_time`, und am Wochenende darf
@@ -243,6 +257,10 @@ Fall dieser Woche, und die Regeln beschreiben nur den Normalfall.
 - **Etwas muss weg**, Reste oder eine offene Packung → als `note` an den passenden Eintrag
 - **Ein Platz fällt aus**, Besuch oder auswärts essen → trag einen Eintrag ohne Rezept ein, nur
   mit `title`, und stopf den Platz nicht mit einem Gericht, das niemand isst
+- **Fallen Plätze aus, prüf die Gerichte, die über mehrere Plätze reichen.** Das Samstagsgericht
+  trägt den Sonntagmittag, das Sonntagsgericht den Montagabend. Fällt das Wochenende weg, braucht
+  der Montagabend einen eigenen Eintrag mit 2 Portionen, und die Mittagessen der Woche werden an
+  einem anderen Tag vorgekocht. Sag Leo, wann
 
 Widerspricht ein Hinweis einer Regel, folg dem Hinweis und sag in einem Satz, welche Regel dafür
 weichen musste.
