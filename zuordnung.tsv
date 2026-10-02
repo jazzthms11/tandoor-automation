@@ -30,7 +30,7 @@
 24		Apfel pink kg		Äpfel						1
 24		Apfel Pink Lady		Äpfel						4
 24		Apfel rot		Äpfel						4
-24		Apfel rot süß		Äpfel						7
+24		Apfel rot süß		Äpfel						8
 24		Apfel rot, süß		Äpfel						1
 24		Apfel rot,extra		Äpfel						1
 -		Apfelmus ungezuckert	-						1
@@ -38,13 +38,13 @@
 82		Aprikosen		Aprikose					2
 82		Aprikosen rot		Aprikose					1
 -		AriZona Pfirsich	-						1
-2		Arla Kaerg.Bal.unges	Butter						3
+2		Arla Kaerg.Bal.unges	Margarine					3
 40		Auberginen		Aubergine					2
 40		Auberginen kg		Aubergine					1
 -		Auflauf-/Bac-0507441	-						1
 38		Avocado			Avocado						3
 38		Avocado Stk.		Avocado						16
-38		Avocado vorger.		Avocado						13
+38		Avocado vorger.		Avocado						14
 26		Baby Bananen		Banane						1
 -		Backkformen -0516642	-						1
 -		BackofenFeine Pommes	-						4
@@ -61,7 +61,7 @@
 26		Bananen Fairtra		Banane						1
 26		Bananen kg		Banane						10
 26		Bananen lose		Banane						7
-58		Barilla Penne Rigate	Nudeln						1
+58		Barilla Penne Rigate	Vollkornnudeln					1
 253		Barilla Pesto Rucola	Pesto						1
 349		Basmati Reis		Vollkornreis					13
 617		Bauernbaguette		Baguette					12
@@ -86,7 +86,7 @@
 89		Bio Mini Romana 2Stk	Römersalat					1
 424		Bio Möhren		Karotte						1
 360		Bio Passierte Tomat.	passierte Tomaten				1
-58		Bio Penne Rigate	Nudeln						19
+58		Bio Penne Rigate	Vollkornnudeln					19
 3		Bio Sonnenmais		Dosenmais					1
 461		Bio Spaghetti Vollk.	Spaghetti					3
 -		Bio Tee Organic Kami	-						1
@@ -112,11 +112,11 @@
 424		Bioland Möhren		Karotte						10
 31		Bioland Rübenzucker	Zucker						1
 489		Bioland Tofu geräu.	Räuchertofu					3
-371		Bioland Tofu natur	Fester Tofu					11
+371		Bioland Tofu natur	Fester Tofu					12
 -		Bioland Zwiebel		-						1
 -		Birnen kg		-						1
 -		Birnen lose		-						1
-527		Bitburger Herb 0%	Bier						35
+527		Bitburger Herb 0%	Bier						36
 502		Bitter Aperitiv 11%	Aperol						3
 -		Blattgelatine		-						1
 158		Blätterteig		Blätterteig					4
@@ -128,9 +128,10 @@
 339		Brot Bauernkru.		Brot						2
 448		Brot Ciabatta		Ciabatta					28
 480		Brot Fladen So.		Fladenbrot					21
+480		Brot Fladenb. S		Fladenbrot					1
 339		Brot Meister		Brot						26
 339		Brot Roggenkr.		Brot						2
-339		Brot Roggenkru		Brot						2
+339		Brot Roggenkru		Brot						3
 339		Brot Vk.K Biol.		Brot						1
 617		Brot Wurzel		Baguette					1
 -		Brotchips Pizza		-						1
@@ -153,6 +154,7 @@
 -		Bürger Rindfl.Mault.	-						1
 531		C&W Dinkel-Brötchen	Brötchen					5
 297		Camembert 30%		Camembert					1
+297		Camembert fines&cara	Camembert					1
 -		Cappuccino		-						2
 -		Capuccino		-						2
 390		Cherrystrauchtomaten	Kirschtomate					5
@@ -186,6 +188,7 @@
 63		Curry			Currypulver					2
 390		Dattelcherrytomaten	Kirschtomate					13
 364		Del.Kochhinterschin.	Schinken					1
+2		Deli Reform Orig.	Margarine					1
 -		Delik. Fleischsalat	-						1
 185		Delikat. Mayonnaise	Mayonnaise					6
 148		Dill			Dill						1
@@ -195,7 +198,7 @@
 21		Dinkelvollkornmehl	Dinkelvollkornmehl				1
 274		Doppio Selone Prim.	Rotwein						1
 -		Dr.Oetk.Bist.Bag.Tom	-						1
-2		Dt. Markenbutter	Butter						1
+2		Dt. Markenbutter	Margarine					1
 525		Duftmüllb. Zitrone	Müllbeutel					1
 188		Dunkle Miso Paste	Miso						1
 517		Dürüm Wraps		Wrap						1
@@ -208,13 +211,13 @@
 239		Eier 10er Freilandh.	Ei (M)						35
 239		Eier 10er OKT		Ei (M)						7
 239		Eier Bodenhalt. 18er	Ei (M)						1
-239		Eier Freiland. XXL	Ei (M)						23
+239		Eier Freiland. XXL	Ei (M)						24
 449		Eierknöpfle		Spätzle						2
-449		Eierspätzle		Spätzle						11
-80		Eisbergsalat		Eisbergsalat					5
+449		Eierspätzle		Spätzle						12
+80		Eisbergsalat		Eisbergsalat					6
 269		Eisschale Vanille	Vanilleeis					2
 291		Eiszeit Miwa nat.	Wasser						1
-445		Emmentaler gerieben	geriebener Emmentaler				10
+445		Emmentaler gerieben	geriebener Emmentaler				11
 -		Energy Drink Classic	-						4
 -		Energy Drink light	-						1
 -		EnergyD.Ko-Bla.		-						1
@@ -257,14 +260,15 @@
 214		Frischer Orangensaft	Orangensaft					1
 17		Frischkäse 20%		Frischkäse					11
 17		Frischkäse Balance	Frischkäse					11
+17		Frischkäse Kräuter	Frischkäse					1
 17		Frischkäse Natur	Frischkäse					2
 375		Frühkart. 2,5kg		Kartoffel					2
 -		Frühlingskräuter	-						1
 -		Frühlingsro.Schwein	-						1
 -		Funny F. Sticks unga	-						1
 -		Funny Frisch ungaris	-						1
-58		Fusilli			Nudeln						4
-58		Fussili HWG XXL		Nudeln						2
+58		Fusilli			Vollkornnudeln					4
+58		Fussili HWG XXL		Vollkornnudeln					2
 15		GAZi Feta		Feta						1
 -		GAZi Halloumi Natur	-						1
 -		Geflügel Taler		-						1
@@ -272,7 +276,7 @@
 215		Gefriergetr.Oregano	getrockneter Oregano				1
 323		Gehack. Tom. Kräu.	Stückige Tomaten (Konserve)			1
 323		Gehackte Tomaten	Stückige Tomaten (Konserve)			36
-270		Gemüse-Brühe		Gemüsebrühe					5
+270		Gemüse-Brühe		Gemüsebrühe					6
 270		Gemüsebrühe		Gemüsebrühe					1
 3		Gemüsemais supersw.	Dosenmais					1
 -		Gemüsepf.Feinschm.	-						1
@@ -288,7 +292,7 @@
 302		Gouda in Scheiben	Gouda						5
 302		Gouda Scheiben		Gouda						1
 302		Gouda Scheiben XXL	Gouda						2
-45		Grana Padano gerieb.	Parmesan					35
+45		Grana Padano gerieb.	Parmesan					36
 45		GranaPadano am Stück	Parmesan					5
 -		Granatapfel		-						4
 -		Granatapfel Stk		-						1
@@ -324,12 +328,13 @@
 -		Hamburger vom Rind	-						5
 482		Hamburger-Sauce		Burgersoße					2
 -		Happy Apple		-						1
-506		Harzer Käse		Harzer Käse					3
+506		Harzer Käse		Harzer Käse					4
 506		HarzerMinis Gelbkäse	Harzer Käse					1
 163		Haselnussk.geha		Haselnüsse					1
 96		Heidelbeere		Blaubeeren					4
 96		Heidelbeeren		Blaubeeren					3
 41		Hengstenberg Balsam.	Essig Balsamico					1
+28		Hgb.Tafelessig		Essig						1
 618		High Prot. Haselnuss	Proteinpudding					1
 618		High Prot.Pud.Schoko	Proteinpudding					2
 618		High Prot.Pudd.Schok	Proteinpudding					1
@@ -361,8 +366,10 @@
 47		Jogh.1,8% Himbeere	Joghurt						1
 47		Joghurt mild 3,5%	Joghurt						4
 -		Juco Designertasche	-						2
-21		K. Dinkelvomehl1kg	Dinkelvollkornmehl				1
+21		K. Dinkelvomehl1kg	Dinkelvollkornmehl				2
 51		K.champignons		Champignon weiß					8
+627		K.Himbeeren		TK Himbeeren					1
+472		K.Käseaufsc.leicht	Käse						1
 524		Kaffee Kräftig		Kaffee						1
 -		Kaffee-/Teeb-0530523	-						1
 -		KaffeegetLatteMacch.	-						4
@@ -375,25 +382,35 @@
 375		Kartoffeln fest		Kartoffel					1
 375		Kartoffeln früh		Kartoffel					3
 472		Kashkaval Käse [OGT]	Käse						1
+66		KAsia Sojasauce		Sojasauce					1
 135		KAsia.Kokosnusswas	Kokosnusswasser					1
 364		Katensch.gew.light	Schinken					1
 364		Katenschinken		Schinken					1
 364		Katenschinken gewürf	Schinken					5
 -		Katjes Frucht		-						1
+323		KBio Geh. Tom. 425	Stückige Tomaten (Konserve)			1
 349		Kbio LK Naturreis	Vollkornreis					1
-58		KBio.Farfalle VK	Nudeln						1
+58		KBio.Farfalle VK	Vollkornnudeln					1
 622		KBio.Kamillentee	Kamillentee					1
 621		KBioPfefferminztee	Pfefferminztee					1
 123		Kichererbsen		Kichererbsen					4
-423		Kidney Bohnen		Kidneybohnen					1
+423		Kidney Bohnen		Kidneybohnen					2
 -		Kinder Choco Fresh	-						1
 330		Kiwi			Kiwi						2
 330		Kiwi Gold		Kiwi						3
 330		Kiwi Gold Stk		Kiwi						1
 358		KL.Dinkelmehl T630	Dinkelmehl					1
 530		Klarspüler [Power]	Klarspüler					1
+381		KLC Piment 30 g		Piment						1
+5		KLC Senf		Senf						1
+626		KLC StuFu classic	Studentenfutter					1
+614		KLC.Erdbeeren		Tk Erdbeeren					1
+3		KLC.Gemüsemais		Dosenmais					1
+432		KLC.Mozz.Kug. 125g	Mozzarella					1
+331		KLC.Mozz.Kugel lig	Fettreduzierter Mozzarella			1
 525		KLC.Müllbeutel 25l	Müllbeutel					1
 203		KLC.Rapsöl		Rapsöl						1
+361		KLC.Tomatenmark		Tomatenmark					1
 -		Klebepistole-0465744	-						1
 -		Knack und Back Crois	-						1
 9		Knoblauch		Knoblauch					1
@@ -405,10 +422,10 @@
 503		Kohl China		Chinakohl					3
 132		Kokosmilch cremig	Kokosnussmilch					1
 132		Kokosmilch fettred.	Kokosnussmilch					1
-132		Kokosnuss-Mil Light	Kokosnussmilch					8
+132		Kokosnuss-Mil Light	Kokosnussmilch					9
 132		Kokosnussmil. Light	Kokosnussmilch					1
 134		Kokosraspeln		Kokosnussflocken				1
-132		Kokusnuss-Mil Normal	Kokosnussmilch					5
+132		Kokusnuss-Mil Normal	Kokosnussmilch					6
 132		Kokusnussmil. Normal	Kokosnussmilch					2
 434		Kopfsalat		Kopfsalat					4
 434		Kopfsalat mit Wurzel	Kopfsalat					21
@@ -420,6 +437,7 @@
 -		Kräuterquark		-						1
 96		Kulturheidelbeeren	Blaubeeren					2
 586		Kuvertüre Zartbitter	Zartbitterschokolade				1
+42		KVeg.SojaKochcreme	Kochsahne					1
 302		Käse Singles Gouda	Gouda						1
 -		Käse-Brezel		-						1
 -		Käse-Lau.stange		-						6
@@ -434,7 +452,7 @@
 617		Körnerbaguette		Baguette					1
 23		Körnig.Frischkäse20%	körniger Frischkäse				5
 23		Körniger Frisch		körniger Frischkäse				1
-23		Körniger Frischkäse	körniger Frischkäse				17
+23		Körniger Frischkäse	körniger Frischkäse				18
 -		Küchenhelfer-0481184	-						1
 615		Küchentücher 3-lagig	Küchenrolle					1
 -		Küchenwaage-0474483	-						1
@@ -487,7 +505,7 @@
 331		Mozzarella light	Fettreduzierter Mozzarella			36
 331		Mozzarella Light	Fettreduzierter Mozzarella			2
 1		MSC Thunfischst.i.So	Thunfisch					1
-242		MSC Wildlachsfilets	Lachsfilet					3
+242		MSC Wildlachsfilets	Lachsfilet					4
 -		Muffins hell		-						1
 -		Mulino BiancoChicche	-						1
 81		Multicol. Salat		grüner Salat					21
@@ -526,7 +544,7 @@
 -		Papiertragetasche	-						1
 400		Paprika edelsüß		Paprikapulver					6
 370		Paprika Mix		Paprika, rot					1
-370		Paprika rot		Paprika, rot					19
+370		Paprika rot		Paprika, rot					20
 370		Paprika rot kg		Paprika, rot					2
 45		Parmig. Regg. gehob.	Parmesan					5
 45		Parmigi. Regg gehob.	Parmesan					1
@@ -536,7 +554,7 @@
 360		Passierte Tomaten	passierte Tomaten				18
 -		Paulaner Spezi		-						8
 -		Paulaner Spezi Zero	-						1
-58		Penne Rigate		Nudeln						3
+58		Penne Rigate		Vollkornnudeln					3
 552		Peperoni Mix		Peperoni					1
 15		Pepperoni-Schafskäse	Feta						1
 -		Perlenb.Radler natur	-						3
@@ -547,7 +565,7 @@
 -		Pfand 0,25 7% M		-						1
 -		Pfand 0,25 7%EM		-						18
 -		Pfand 0,25 EM		-						25
--		Pfand 0,25 M		-						89
+-		Pfand 0,25 M		-						90
 -		Pfandartikel		-						1
 221		Pfeffer schwarz		schwarzer Pfeffer				1
 221		Pfeffer schwarz gem	schwarzer Pfeffer				1
@@ -570,6 +588,7 @@
 -		Pommes Frites		-						3
 -		Prem.Pasta Schinken	-						2
 527		Premium Pils 4,9%	Bier						1
+274		Prim.Merl.Pug.075	Rotwein						1
 364		Prosciutto cotto	Schinken					1
 364		Prosciutto Crudo	Schinken					1
 618		Prot.Pudd.Haselnuss	Proteinpudding					1
@@ -659,7 +678,7 @@
 472		Snackwürfel Butterk.	Käse						1
 302		Snackwürfel Gouda	Gouda						2
 22		Sodergarden gesalzen	gesalzene Butter				1
-118		Softfrüchte Datteln	Dattel getrocknet				4
+118		Softfrüchte Datteln	Dattel getrocknet				5
 -		Softlan Ultr.Vanille	-						2
 -		Softpudding Schoko	-						1
 426		Soja Granulat		Sojagranulat					1
@@ -689,11 +708,12 @@
 265		Strauchtomaten		Tomate						5
 -		Stud.-Futter Classic	-						3
 28		Surig Essig-Essenz	Essig						2
-2		Södergarden Mi.Fett	Butter						3
-2		Södergarden unges.	Butter						4
-2		Sødergården unges.	Butter						16
+2		Södergarden Mi.Fett	Margarine					3
+2		Södergarden unges.	Margarine					4
+2		Sødergården unges.	Margarine					16
 31		Südzucker fein Rübe.	Zucker						1
 488		Taschki Pelm.Schwein	Pelmeni						1
+-		Teek.Heisse Liebe	-						1
 -		Teekane Hüttenzauber	-						1
 -		Teekanne Heiße Liebe	-						1
 -		Teekanne Heißer Hugo	-						1
@@ -701,7 +721,7 @@
 -		TeekanneKleine Sünde	-						1
 1		Thunfisch i. e. Saft	Thunfisch					1
 1		Thunfisch i.e. Saft	Thunfisch					5
-1		Thunfischsteak		Thunfisch					23
+1		Thunfischsteak		Thunfisch					24
 1		Thunfischsteak Sonn.	Thunfisch					15
 472		Tilsiter Scheiben	Käse						1
 -		Tiramisu		-						2
@@ -742,15 +762,16 @@
 -		Vegane Burger Pattys	-						4
 562		Vegane Chunks Döner	Hähnchenalternative				2
 562		Vegane ChunksKlassik	Hähnchenalternative				1
+185		Vegane Mayonnaise	Mayonnaise					1
 528		Vegane Mini Frikadel	Frikadellen					1
 -		Vegane Steak Pfeffer	-						1
 -		Veganer Hauchschnitt	-						2
 -		Veganes Cordon Bleu	-						1
-562		Veganes Gyros		Hähnchenalternative				10
+562		Veganes Gyros		Hähnchenalternative				11
 -		Veganes Hack		-						1
 253		Veganes Pesto grün	Pesto						3
 253		Veganes Pesto rot	Pesto						2
-460		Vollk. Sandwi. Toast	Vollkorntoast					19
+460		Vollk. Sandwi. Toast	Vollkorntoast					20
 460		Vollkorn Toast		Vollkorntoast					2
 291		Volvic Naturelle	Wasser						1
 516		W5 Glas-Reiniger	Glasreiniger					1
@@ -788,4 +809,5 @@
 -		Zwiebel weiß		-						1
 -		Zwiebeln gelb		-						3
 37		Zwiebeln rot		rote Zwiebel					8
+37		Zwiebeln rot 1kg	rote Zwiebel					1
 -		Zwiebelzopf		-						1

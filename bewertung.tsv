@@ -61,6 +61,9 @@
 0	35	Wraps                                          		
 2	50	Wraps mit Thunfisch                            	Hauptspeise, Mealprep, Fisch, Abendessen
 5   82  Wraps mit Tofu	
+3	84	Chili sin Carne                                 Hauptspeise, Mealprep, Vegetarisch, Reis	Chili ohne Fleisch aus den Frosterportionen Bolognese vegetarisch, mit Reis
+0	85	Metaxa-Gyros vegetarisch	Abendessen, Hauptspeise, Vegetarisch, Reis	Vegetarisches Gyros in Metaxasauce, mit Käse überbacken, dazu Vollkornreis
+
 
 # --- Bausteine: Beilagen, Nachtisch, Sossen. Stehen nie allein auf einem Platz ---
 0	6	Bechamelsauce               	Soßen, Basisrezepte	Bechamelsauce – einfaches Grundrezept
@@ -86,3 +89,4 @@
 0	69	Schoko-Mousse               	Backen, Süß, Nachtisch	Mousse au Chocolat avec Tofu
 0	80	Snickers Mini               	Süß, Nachtisch	
 4	44	Tofu-Nuggets                	Vegetarisch, Beilage	
+
