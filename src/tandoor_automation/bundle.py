@@ -17,7 +17,7 @@ WEEK_START = timedelta(days=2)
 
 Eingekauft wird freitags, und der Einkauf soll am Anfang der Woche stehen und nicht mitten
 darin. Sonst liegt die Ware des Wochenendes neun Tage im Kühlschrank. Das Etikett bleibt die
-ISO-Woche des Montags, der in der Woche liegt: `2026-W40` ist Samstag, der 3. Oktober, bis
+ISO-Woche des Montags, der in der Woche liegt: `2026-W41` ist Samstag, der 3. Oktober, bis
 Freitag, der 9."""
 WEEK_PATTERN = re.compile(r"^(\d{4})-W(\d{2})$")
 
