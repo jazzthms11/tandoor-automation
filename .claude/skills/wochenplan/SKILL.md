@@ -173,8 +173,10 @@ Was in Tandoor steht, sieht anders aus als der Vorschlag, und das ist Absicht.
   welches der beiden Gerichte isst, und nur daraus lassen sich die Nährwerte eines Tages rechnen
 - **`plan apply` fragt vorher**, welches der beiden Gerichte Leo dreimal isst. Fünf Tage gehen
   nicht glatt auf zwei Gerichte auf, und diese Antwort ist eine Entscheidung
-- **Jeder Eintrag mit Rezept trägt die Esser** als `@leo` und `@jazz` in der ersten Zeile seiner
-  `note`, ein geteiltes Abendessen beide. Deine `note` rutscht darunter und bleibt erhalten
+- **Jedes Mittagessen mit Rezept trägt seine Esser** als `@leo` oder `@jazz` in der ersten Zeile
+  seiner `note`. Deine `note` rutscht darunter und bleibt erhalten
+- **Das Abendessen bekommt keine Marke.** Es essen alle, und SyncHealth teilt es auf die Esser im
+  Haushalt auf. Eine Marke dort hieße, dass nur einer gegessen hat
 - **Ein Eintrag ohne Rezept bekommt keine Marke.** An einem Termin wird gegessen, aber nicht aus
   der eigenen Küche
 
@@ -194,7 +196,7 @@ beide Mahlzeiten mindestens zwei Portionen eingeplant sind. Ein Eintrag ohne Rez
 als versorgt und braucht keine Portionen, muss aber einen Titel tragen.
 
 `plan apply` prüft zusätzlich die Anteile der entfalteten Form: ein Eintrag muss so viele Portionen
-am Tag tragen, wie Esser an ihm stehen. Das trifft die beiden Mittagsgerichte über ungleiche
+am Tag tragen, wie Esser an ihm stehen, ohne Marke so viele, wie der Haushalt hat. Das trifft die beiden Mittagsgerichte über ungleiche
 Zeiträume, etwa das eine von Montag bis Freitag und das andere bis Donnerstag. Sie decken die Woche,
 bilden aber keinen geteilten Platz mehr, und jeder Anteil wäre still halbiert.
 

@@ -6,9 +6,10 @@ Zweitens wird der Vorschlag gegen den aktuellen Stand in Tandoor gehalten, damit
 nichts doppelt schreibt: was schon genau so dort steht, gilt als erledigt und nicht als Kollision.
 
 Davor liegt das Entfalten: aus den acht Einträgen des Vorschlags werden die Einträge, die Tandoor
-wirklich führt, jeder mit den Marken seiner Esser in der ersten Zeile der `note`. Ein geteilter
-Platz zerfällt dabei in einen Eintrag je Tag und Esser, denn sonst steht nirgends, wer an welchem
-Tag welches der beiden vorgekochten Mittagessen isst.
+wirklich führt, jeder mit den Marken seiner Esser in der ersten Zeile der `note`. Ausgenommen ist
+das Abendessen: es essen alle, und wie viele das sind, weiß der Leser der Marken selbst. Ein
+geteilter Platz zerfällt dabei in einen Eintrag je Tag und Esser, denn sonst steht nirgends, wer
+an welchem Tag welches der beiden vorgekochten Mittagessen isst.
 
 Der Rückweg steht daneben: `clearable` sagt, welche Einträge einer Woche wieder verschwinden dürfen.
 """
@@ -18,7 +19,9 @@ from datetime import date, datetime, time, timedelta
 from tandoor_automation.bundle import PlanBundle
 from tandoor_automation.models import MealType, PlannedMeal
 from tandoor_automation.proposal import (
+    HOUSEHOLD,
     MARKS,
+    TOGETHER,
     TOLERANCE,
     Proposal,
     ProposalEntry,
@@ -64,15 +67,18 @@ def split_groups(proposal: Proposal) -> dict[Slot, list[ProposalEntry]]:
     }
 
 
-def unfold(proposal: Proposal, leads: dict[Slot, int]) -> Proposal:
+def unfold(proposal: Proposal, together: set[int], leads: dict[Slot, int]) -> Proposal:
     """Baut aus dem Vorschlag die Einträge, die wirklich nach Tandoor gehen.
 
     Jeder Eintrag mit Rezept bekommt die Esser als Marken, ein geteilter Platz zerfällt zusätzlich
-    in einen Eintrag je Tag und Esser. Ein Termin ohne Rezept bleibt unberührt und ohne Marke: an
-    ihm wird gegessen, aber nicht aus der eigenen Küche.
+    in einen Eintrag je Tag und Esser. Ohne Marke bleiben zwei Arten von Einträgen. Ein Termin ohne
+    Rezept, denn an ihm wird gegessen, aber nicht aus der eigenen Küche. Und eine Mahlzeit, die alle
+    zusammen essen: SyncHealth teilt sie auf seine eigene Zahl der Esser im Haushalt auf, und eine
+    Marke dort hieße, dass ausnahmsweise nur die Markierten gegessen haben.
 
     Args:
         proposal: Der Vorschlag des Wählers.
+        together: Die IDs der Mahlzeiten, die alle zusammen essen, siehe `together_of`.
         leads: Je geteiltem Platz das Gericht, mit dem der erste Esser am ersten Tag anfängt.
             Ein Platz ohne Eintrag fängt mit seinem ersten Gericht an.
 
@@ -84,7 +90,7 @@ def unfold(proposal: Proposal, leads: dict[Slot, int]) -> Proposal:
     entries: list[ProposalEntry] = []
     for entry in proposal.entries:
         slot = slot_of(entry)
-        if entry.recipe_id is None:
+        if entry.recipe_id is None or entry.meal_type_id in together:
             entries.append(entry)
         elif slot not in groups:
             entries.append(entry.model_copy(update={"marks": list(MARKS)}))
@@ -118,10 +124,11 @@ def _shares(group: list[ProposalEntry], lead: int) -> list[ProposalEntry]:
 def share_problems(plan: Proposal) -> list[str]:
     """Findet Einträge, deren Portionen für die Esser nicht reichen, die an ihnen stehen.
 
-    Der Anteil eines Essers ist `servings / Tage / Marken`, und wer die Nährwerte eines Tages
-    daraus rechnet, glaubt diese Zahl. Zwei Mittagsgerichte über ungleiche Zeiträume bilden keinen
-    geteilten Platz, bekommen deshalb beide Marken und halbierten still jeden Anteil. Die Deckung
-    der Woche stimmt dabei, nur die Zuordnung nicht.
+    Der Anteil eines Essers ist `servings / Tage / Marken`, ohne Marke `servings / Tage /
+    Haushalt`, und wer die Nährwerte eines Tages daraus rechnet, glaubt diese Zahl. Zwei
+    Mittagsgerichte über ungleiche Zeiträume bilden keinen geteilten Platz, bekommen deshalb beide
+    Marken und halbierten still jeden Anteil. Die Deckung der Woche stimmt dabei, nur die
+    Zuordnung nicht.
 
     Args:
         plan: Der entfaltete Vorschlag.
@@ -129,17 +136,33 @@ def share_problems(plan: Proposal) -> list[str]:
     Returns:
         Alle gefundenen Mängel als Klartextzeilen.
     """
-    return [
-        f"'{entry.recipe_name}' ab {entry.from_date}: {portions_per_day(entry):.1f} Portionen "
-        f"am Tag für {len(entry.marks)} Esser"
-        for entry in plan.entries
-        if entry.marks and portions_per_day(entry) < len(entry.marks) - TOLERANCE
-    ]
+    problems = []
+    for entry in plan.entries:
+        eaters = len(entry.marks) or HOUSEHOLD
+        if entry.recipe_id is not None and portions_per_day(entry) < eaters - TOLERANCE:
+            problems.append(
+                f"'{entry.recipe_name}' ab {entry.from_date}: {portions_per_day(entry):.1f} "
+                f"Portionen am Tag für {eaters} Esser"
+            )
+    return problems
 
 
 def note_of(entry: ProposalEntry) -> str:
     """Setzt die Marken der Esser in die erste Zeile der Notiz eines Eintrags."""
     return "\n".join(part for part in [" ".join(entry.marks), entry.note] if part)
+
+
+def together_of(bundle: PlanBundle) -> set[int]:
+    """Nennt die Mahlzeiten, die alle zusammen essen, und die deshalb keine Marke bekommen.
+
+    Erkannt werden sie am Namen, genau wie in SyncHealth: was dort als geteilt gilt, muss hier
+    ohne Marke bleiben, sonst sticht die Marke das Feld für die Esser im Haushalt.
+    """
+    return {
+        meal_type.id
+        for meal_type in bundle.meal_types
+        if meal_type.name.casefold() == TOGETHER.casefold()
+    }
 
 
 def meal_type_of(bundle: PlanBundle, entry: ProposalEntry) -> MealType | None:

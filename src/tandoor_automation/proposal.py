@@ -19,6 +19,9 @@ MARKS = ("@leo", "@jazz")
 `plan apply` schreibt diese Marken in die erste Zeile der `note` jedes Planeintrags. Wer die
 Nährwerte eines Tages liest, findet daran seinen Anteil, ohne die Größe des Haushalts zu kennen."""
 HOUSEHOLD = len(MARKS)
+TOGETHER = "Abendessen"
+"""Die Mahlzeit, die alle zusammen essen. Sie trägt keine Marken, SyncHealth teilt sie auf die Esser
+im Haushalt auf und erkennt sie an genau diesem Namen."""
 TOLERANCE = 0.01
 
 

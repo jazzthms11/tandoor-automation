@@ -16,6 +16,7 @@ from tandoor_automation.apply import (
     share_problems,
     slot_of,
     split_groups,
+    together_of,
     unfold,
     without,
 )
@@ -183,7 +184,7 @@ def _lunches() -> Proposal:
 
 
 def test_geteilter_platz_zerfaellt_in_einen_eintrag_je_tag_und_esser() -> None:
-    entries = unfold(_lunches(), {}).entries
+    entries = unfold(_lunches(), {ABEND}, {}).entries
     assert len(entries) == 10
     assert all(entry.from_date == entry.to_date for entry in entries)
     assert all(entry.servings == 1 for entry in entries)
@@ -191,7 +192,7 @@ def test_geteilter_platz_zerfaellt_in_einen_eintrag_je_tag_und_esser() -> None:
 
 
 def test_jeder_tag_traegt_beide_gerichte_einmal() -> None:
-    entries = unfold(_lunches(), {}).entries
+    entries = unfold(_lunches(), {ABEND}, {}).entries
     for day in (date(2026, 9, day) for day in range(21, 26)):
         am_tag = [entry for entry in entries if entry.from_date == day]
         assert sorted(entry.recipe_id or 0 for entry in am_tag) == [1, 2]
@@ -202,27 +203,40 @@ def test_das_fuehrende_gericht_kommt_bei_fuenf_tagen_dreimal() -> None:
     proposal = _lunches()
     slot = slot_of(proposal.entries[0])
     for lead, name in enumerate(["Lasagne", "Linsencurry"]):
-        entries = unfold(proposal, {slot: lead}).entries
+        entries = unfold(proposal, {ABEND}, {slot: lead}).entries
         meins = [entry.recipe_name for entry in entries if entry.marks == [LEO]]
         assert meins.count(name) == 3
         assert len(meins) == 5
 
 
-def test_einzelner_eintrag_traegt_beide_marken() -> None:
+def test_einzelnes_mittagessen_traegt_beide_marken() -> None:
+    """Der Sonntagmittag: SyncHealth hält ein Mittagessen ohne Marke an."""
+    sonntag = _entry().model_copy(update={"to_date": date(2026, 9, 21), "servings": 2})
+    entries = unfold(Proposal(week="2026-W39", entries=[sonntag]), {ABEND}, {}).entries
+    assert entries[0].marks == list(MARKS)
+
+
+def test_abendessen_bleibt_ohne_marke() -> None:
+    """SyncHealth teilt es auf den Haushalt auf, eine Marke stäche das Feld."""
     abend = _entry().model_copy(
         update={"meal_type_id": ABEND, "to_date": date(2026, 9, 22), "servings": 4}
     )
-    entries = unfold(Proposal(week="2026-W39", entries=[abend]), {}).entries
-    assert len(entries) == 1
-    assert entries[0].marks == list(MARKS)
-    assert entries[0].to_date == date(2026, 9, 22)
+    plan = unfold(Proposal(week="2026-W39", entries=[abend]), {ABEND}, {})
+    assert plan.entries[0].marks == []
+    assert share_problems(plan) == []
+    knapp = plan.entries[0].model_copy(update={"servings": 2})
+    assert len(share_problems(plan.model_copy(update={"entries": [knapp]}))) == 1
+
+
+def test_abendessen_erkennt_sich_am_namen() -> None:
+    assert together_of(_bundle([])) == {ABEND}
 
 
 def test_termin_ohne_rezept_bleibt_ohne_marke() -> None:
     termin = _entry().model_copy(
         update={"recipe_id": None, "recipe_name": "", "title": "Urlaub", "servings": 0}
     )
-    assert unfold(Proposal(week="2026-W39", entries=[termin]), {}).entries[0].marks == []
+    assert unfold(Proposal(week="2026-W39", entries=[termin]), {ABEND}, {}).entries[0].marks == []
 
 
 def test_beilage_neben_dem_hauptgericht_wird_nicht_entfaltet() -> None:
@@ -231,7 +245,10 @@ def test_beilage_neben_dem_hauptgericht_wird_nicht_entfaltet() -> None:
     beilage = haupt.model_copy(update={"recipe_id": 2, "recipe_name": "Linsencurry"})
     proposal = Proposal(week="2026-W39", entries=[haupt, beilage])
     assert split_groups(proposal) == {}
-    assert [entry.marks for entry in unfold(proposal, {}).entries] == [list(MARKS), list(MARKS)]
+    assert [entry.marks for entry in unfold(proposal, {ABEND}, {}).entries] == [
+        list(MARKS),
+        list(MARKS),
+    ]
 
 
 def test_marken_stehen_in_der_ersten_zeile_der_notiz() -> None:
@@ -242,7 +259,7 @@ def test_marken_stehen_in_der_ersten_zeile_der_notiz() -> None:
 
 def test_entfaltete_mittagessen_decken_ihre_tage() -> None:
     """Zehn Einträge zu einer Portion tragen die Woche genauso wie zwei zu fünf."""
-    problems = validate_proposal(unfold(_lunches(), {}), _bundle([]))
+    problems = validate_proposal(unfold(_lunches(), {ABEND}, {}), _bundle([]))
     gedeckt = [f"2026-09-{day} Mittagessen" for day in range(21, 26)]
     assert not [problem for problem in problems if problem.startswith(tuple(gedeckt))]
 
@@ -265,10 +282,10 @@ def test_ungleiche_zeitraeume_halbieren_keinen_anteil_still() -> None:
     kurz = _entry().model_copy(
         update={"recipe_id": 2, "recipe_name": "Linsencurry", "to_date": date(2026, 9, 24)}
     )
-    plan = unfold(Proposal(week="2026-W39", entries=[_entry(), kurz]), {})
+    plan = unfold(Proposal(week="2026-W39", entries=[_entry(), kurz]), {ABEND}, {})
     assert [entry.marks for entry in plan.entries] == [list(MARKS), list(MARKS)]
     assert len(share_problems(plan)) == 2
 
 
 def test_der_normalfall_meldet_keinen_anteil() -> None:
-    assert share_problems(unfold(_lunches(), {})) == []
+    assert share_problems(unfold(_lunches(), {ABEND}, {})) == []

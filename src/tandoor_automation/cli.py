@@ -14,6 +14,7 @@ from tandoor_automation.apply import (
     payload,
     share_problems,
     split_groups,
+    together_of,
     unfold,
     without,
 )
@@ -131,8 +132,8 @@ def _run_apply(path: Path, dry_run: bool) -> None:
     Tandoor, ist die Datei überflüssig: Tandoor ist die einzige Wahrheit, sie wird gelöscht.
 
     Geschrieben wird nicht der Vorschlag selbst, sondern seine entfaltete Form: ein geteilter Platz
-    zerfällt in einen Eintrag je Tag und Esser, und jeder Eintrag mit Rezept trägt die Marken seiner
-    Esser. Auch `--dry-run` fragt deshalb vorher nach der Aufteilung.
+    zerfällt in einen Eintrag je Tag und Esser, und jeder Eintrag mit Rezept außer dem Abendessen
+    trägt die Marken seiner Esser. Auch `--dry-run` fragt deshalb vorher nach der Aufteilung.
 
     Args:
         path: Pfad der Vorschlagsdatei.
@@ -141,7 +142,7 @@ def _run_apply(path: Path, dry_run: bool) -> None:
     proposal = _read_proposal(path)
     with TandoorClient(Settings()) as tandoor:
         bundle = build_bundle(tandoor, proposal.week)
-        plan = unfold(proposal, _ask_leads(proposal, bundle))
+        plan = unfold(proposal, together_of(bundle), _ask_leads(proposal, bundle))
         matches = match_existing(plan, bundle)
         rest = without(bundle, [twin for _, twin in matches if twin])
         _report(validate_proposal(plan, rest) + share_problems(plan))

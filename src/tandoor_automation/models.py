@@ -97,9 +97,10 @@ class PlannedMeal(BaseModel):
 
     Beide Daten tragen die Uhrzeit der Mahlzeit, Mittagessen etwa 12:00 in lokaler Zeitzone.
 
-    In der ersten Zeile der `note` stehen die Esser als Marken, siehe `proposal.MARKS`. Sie machen
-    den Eintrag erst eindeutig: zwei Mittagessen desselben Tages unterscheiden sich sonst nur im
-    Rezept, und wer welches isst, steht nirgends sonst.
+    In der ersten Zeile der `note` stehen die Esser als Marken, siehe `proposal.MARKS`, außer beim
+    Abendessen, das alle zusammen essen. Sie machen den Eintrag erst eindeutig: zwei Mittagessen
+    desselben Tages unterscheiden sich sonst nur im Rezept, und wer welches isst, steht nirgends
+    sonst.
     """
 
     id: int
