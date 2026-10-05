@@ -300,7 +300,8 @@ def _run_shop(week: str | None, dry_run: bool) -> None:
             today,
         )
         answers = _ask(found.questions, demand)
-        _write_shopping(tandoor, found, answers, today, dry_run)
+        _book_answers(tandoor, found, answers, today, dry_run)
+        _write_list(tandoor, found, answers, demand, dry_run)
 
 
 def _planned_needs(tandoor: TandoorClient, week: str) -> dict[int, Need]:
@@ -362,14 +363,14 @@ def _read_choice(question: Question) -> Choice | None:
         print(f"  {0} bis {len(question.choices) - 1}, oder leer zum Überspringen")
 
 
-def _write_shopping(
+def _book_answers(
     tandoor: TandoorClient,
     found: Review,
     answers: dict[int, Choice],
     today: date,
     dry_run: bool,
 ) -> None:
-    """Schreibt die Antworten in den Bestand und das Fehlende auf die Einkaufsliste.
+    """Schreibt die Antworten in den Bestand.
 
     Unbeantwortete Fragen fassen den Bestand nicht an: keine Antwort ist keine Bestätigung. Auf
     die Liste kommen sie trotzdem.
@@ -387,15 +388,43 @@ def _write_shopping(
             )
         else:
             tandoor.update_inventory_entry(question.entry_id, choice.amount, trusted_until)
+
+
+def _write_list(
+    tandoor: TandoorClient,
+    found: Review,
+    answers: dict[int, Choice],
+    demand: dict[int, Need],
+    dry_run: bool,
+) -> None:
+    """Schreibt das Fehlende auf die Einkaufsliste, je Gericht ein Eintrag.
+
+    Braucht die Woche ein Lebensmittel für zwei Gerichte, stehen zwei Einträge da, jeder an
+    seinem Rezeptblock. Tandoor zeigt dann eine Zeile mit 2 und beiden Gerichten, bei einem
+    Gericht keine Zahl. Vorratsware ohne Gericht bekommt einen Eintrag ohne Block.
+
+    Ein Block wird erst angelegt, wenn etwas aus seinem Gericht gekauft wird, und hängt schon
+    einer am Planeintrag, wird er wiederverwendet.
+    """
     listed = tandoor.shopping_list()
+    blocks = tandoor.shopping_recipes()
     wanted = buy_list(found, answers)
     todo = [item for item in wanted if item.food_id not in listed]
     for item in todo:
+        need = demand.get(item.food_id)
+        meals = list(need.recipes.values()) if need else []
+        reason = f" ({', '.join(need.recipes)})" if need else ""
         if dry_run:
-            print(f"würde auf die Liste: {item.food_name}")
-        else:
-            tandoor.create_shopping_entry(item.food_id)
-            print(f"auf die Liste: {item.food_name}")
+            print(f"würde auf die Liste: {item.food_name}{reason}")
+            continue
+        for meal in meals or [None]:
+            block_id = None
+            if meal is not None:
+                if meal.id not in blocks:
+                    blocks[meal.id] = tandoor.create_shopping_recipe(meal)
+                block_id = blocks[meal.id]
+            tandoor.create_shopping_entry(item.food_id, block_id)
+        print(f"auf die Liste: {item.food_name}{reason}")
     print(
         f"{len(answers)} von {len(found.questions)} Fragen beantwortet, "
         f"{len(todo)} auf die Liste, {len(wanted) - len(todo)} standen schon drauf"

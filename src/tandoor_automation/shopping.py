@@ -62,9 +62,12 @@ class Need:
 
     Die Mengen stehen nach Einheit getrennt, weil ein Lebensmittel in einem Rezept in Gramm und
     im nächsten in Stück stehen kann. Zusammengerechnet wird nur, was dieselbe Einheit trägt.
+
+    Je Gericht steht sein erster Planeintrag dabei. An ihm hängt der Eintrag auf der
+    Einkaufsliste, damit im Laden zu sehen ist, wofür gekauft wird.
     """
 
-    recipes: list[str]
+    recipes: dict[str, PlannedMeal]
     amounts: dict[str, Decimal]
 
 
@@ -217,9 +220,8 @@ def needs(meals: list[PlannedMeal], details: dict[int, RecipeDetail]) -> dict[in
             continue
         factor = Decimal(str(meal.servings)) / detail.servings
         for ingredient in detail.ingredients:
-            need = found.setdefault(ingredient.food_id, Need([], {}))
-            if detail.name not in need.recipes:
-                need.recipes.append(detail.name)
+            need = found.setdefault(ingredient.food_id, Need({}, {}))
+            need.recipes.setdefault(detail.name, meal)
             amount = need.amounts.get(ingredient.unit, Decimal(0))
             need.amounts[ingredient.unit] = amount + ingredient.amount * factor
     return found

@@ -317,16 +317,50 @@ class TandoorClient:
             if not item.get("checked") and item.get("food")
         }
 
-    def create_shopping_entry(self, food_id: int) -> None:
+    def shopping_recipes(self) -> dict[int, int]:
+        """Holt die Rezeptblöcke der Einkaufsliste, die an einem Planeintrag hängen.
+
+        Returns:
+            Die ID des Blocks je Planeintrag.
+        """
+        return {
+            block["mealplan"]: block["id"]
+            for block in self._pages("/api/shopping-list-recipe/", {})
+            if block.get("mealplan")
+        }
+
+    def create_shopping_recipe(self, meal: PlannedMeal) -> int:
+        """Legt den Rezeptblock an, unter dem Tandoor den Namen des Gerichts zeigt.
+
+        Args:
+            meal: Der Planeintrag, aus dem gekauft wird.
+
+        Returns:
+            Die ID des Blocks.
+        """
+        response = self._client.post(
+            "/api/shopping-list-recipe/",
+            json={"recipe": meal.recipe_id, "mealplan": meal.id, "servings": meal.servings},
+        )
+        response.raise_for_status()
+        return response.json()["id"]
+
+    def create_shopping_entry(self, food_id: int, block_id: int | None = None) -> None:
         """Setzt ein Lebensmittel auf die Einkaufsliste.
 
         Die Liste sagt "kaufen" und führt keine Menge: `amount` genügt, `unit` darf fehlen.
+        Tandoor zählt die Einträge eines Lebensmittels zusammen, eine 2 heißt also zwei Gerichte.
+
+        Das Lebensmittel geht als ID hinaus und nie als Objekt: ein mitgeschickter Name benennt
+        es in Tandoor um.
 
         Args:
             food_id: Das Lebensmittel.
+            block_id: Der Rezeptblock, aus dem es gebraucht wird. Leer bei Vorratsware.
         """
         response = self._client.post(
-            "/api/shopping-list-entry/", json={"food": food_id, "amount": 1}
+            "/api/shopping-list-entry/",
+            json={"food": food_id, "amount": 1, "list_recipe": block_id},
         )
         response.raise_for_status()
 

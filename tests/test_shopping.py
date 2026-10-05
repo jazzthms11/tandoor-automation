@@ -172,7 +172,7 @@ def test_dasselbe_gericht_zweimal_zaehlt_zweimal_und_steht_einmal():
     details = {1: _detail(1, "Chili", 4, "400", "g")}
     found = needs([_meal(1, 4), _meal(1, 2)], details)
     assert found[TOMATEN].amounts == {"g": Decimal("600")}
-    assert found[TOMATEN].recipes == ["Chili"]
+    assert list(found[TOMATEN].recipes) == ["Chili"]
 
 
 def test_verschiedene_einheiten_bleiben_getrennt():
