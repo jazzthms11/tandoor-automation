@@ -1,0 +1,23 @@
+# Betrieb auf leosserver, aus dem Klon unter /srv/config/tandoor-automation.
+#
+#   docker compose build
+#   docker compose run --rm app plan bundle
+#
+# Noch kein Dienst, der dauerhaft läuft: jeder Befehl startet einen Container und räumt ihn danach
+# weg. `run` hängt ein Terminal an, die Rückfragen von plan apply und plan shop gehen also.
+
+services:
+  app:
+    build: .
+    image: tandoor-automation:latest
+    env_file: .env
+    environment:
+      # Container laufen sonst in UTC, und plan apply schriebe das Mittagessen auf 14:00.
+      TZ: Europe/Berlin
+    # Der eigene Nutzer auf dem Server, damit Dateien im Klon nicht root gehören. Nachsehen mit `id`.
+    user: "1000:1000"
+    # Der Klon selbst ist das Arbeitsverzeichnis: dort liegen die TSV-Dateien aus Git und daneben
+    # der Laufzustand, den Git ignoriert (bundle/, vorschlag/, bons/, .lidl-token).
+    volumes:
+      - .:/work
+    mem_limit: 256m
