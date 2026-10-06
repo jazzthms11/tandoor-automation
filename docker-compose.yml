@@ -14,10 +14,13 @@ services:
     environment:
       # Container laufen sonst in UTC, und plan apply schriebe das Mittagessen auf 14:00.
       TZ: Europe/Berlin
+      DATA_DIR: /data
     # Der eigene Nutzer auf dem Server, damit Dateien im Klon nicht root gehören. Nachsehen mit `id`.
     user: "1000:1000"
-    # Der Klon selbst ist das Arbeitsverzeichnis: dort liegen die TSV-Dateien aus Git und daneben
-    # der Laufzustand, den Git ignoriert (bundle/, vorschlag/, bons/, .lidl-token).
+    # Der Klon ist das Arbeitsverzeichnis, dort landen bundle/, vorschlag/ und die Exporte der
+    # Tabellen. Datenbank, Rohbons und Lidl-Zugang liegen außerhalb, unter /srv/data, und gehören
+    # dem Nutzer aus `user:`.
     volumes:
       - .:/work
+      - /srv/data/tandoor-automation:/data
     mem_limit: 256m

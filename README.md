@@ -34,13 +34,77 @@ docker compose run --rm app plan bundle
 docker compose run --rm app plan shop --dry-run
 ```
 
-Jeder Befehl startet einen Container und räumt ihn danach weg. Gearbeitet wird im Klon selbst:
-die TSV-Dateien kommen aus Git, `bundle/`, `vorschlag/`, `bons/` und `.lidl-token` liegen
-daneben. `TZ=Europe/Berlin` setzt die Compose-Datei, sonst stünden die Planeinträge zwei Stunden
-daneben. In `user:` steht die eigene ID auf dem Server, nachzusehen mit `id`.
+Jeder Befehl startet einen Container und räumt ihn danach weg. Gearbeitet wird im Klon selbst,
+dort landen `bundle/`, `vorschlag/` und die Exporte der Tabellen. Alles Veränderliche liegt
+außerhalb davon unter `/srv/data/tandoor-automation`, im Container `/data`: die Datenbank, die
+Rohbons unter `bons/` und der Zugang zu Lidl. Der Ordner gehört dem Nutzer aus `user:`, sonst
+kann der Container dort nicht schreiben:
 
-Bons werden nur an einer Stelle gebucht, solange `bons/.importiert` eine Datei ist. Laptop und
-Server führen sonst je eine eigene Liste, und ein Bon landet zweimal im Bestand.
+```bash
+sudo mkdir -p /srv/data/tandoor-automation
+sudo chown 1000:1000 /srv/data/tandoor-automation
+```
+
+`TZ=Europe/Berlin` setzt die Compose-Datei, sonst stünden die Planeinträge zwei Stunden daneben.
+In `user:` steht die eigene ID auf dem Server, nachzusehen mit `id`.
+
+Die Datenbank auf dem Server ist die einzige. `plan shop`, `plan rate` und alles unter `bon`
+laufen deshalb dort: auf dem Laptop legte jeder Befehl eine eigene, leere Datenbank unter `data/`
+an. Was nur Tandoor braucht, also `plan bundle`, `check`, `apply` und `clear`, geht weiter überall.
+
+### Eigene Tabellen
+
+Was Tandoor nicht kennt, steht in SQLite: Grundbewertung, Klassen, Ausnahmen, Intervalle, die
+Zuordnung der Bonnamen und welche Bons gebucht sind. Bis die Oberfläche Seiten dafür hat, ist die
+TSV-Datei der Weg zum Ändern:
+
+```bash
+plan data export klassen          # schreibt klassen.tsv in den aktuellen Ordner
+plan data import klassen          # liest sie zurück, die Datei ersetzt die Tabelle
+plan data import --dry-run        # zählt nur, was sich änderte
+plan data backup                  # Kopie nach backup/ im Datenordner, sicher auch im Betrieb
+```
+
+Eine Zeile, die in der Datei fehlt, wird gelöscht. Ausgenommen ist `importiert`, der Stand der
+Bons: dort kommt nur dazu, ein vergessener Eintrag würde einen Bon doppelt buchen. Ein Export
+überschreibt keine Datei, die noch nicht Eingelesenes trägt. Die Zuordnung geht nicht über
+`export`, sondern über `bon map`, weil ihre Lesehilfe Tandoor und die Bons braucht.
+
+Neue Spalten oder Tabellen kommen über Alembic, angewendet beim ersten Zugriff:
+
+```bash
+uv run alembic revision --autogenerate -m "was sich ändert"
+```
+
+Die Datenbank darf restic nicht mitten im Schreiben greifen. `backup.sh` ruft deshalb vor dem
+Sichern `docker compose run --rm app plan data backup` auf, die Kopie liegt unter `/srv` mit.
+
+### Umzug aus den TSV-Dateien
+
+Bis M2 lagen die Tabellen als TSV-Dateien im Repo und der Laufzustand daneben. Der neueste Stand
+von beidem liegt auf dem Laptop, und `git pull` nimmt die TSV-Dateien mit. Einmalig, in dieser
+Reihenfolge:
+
+```bash
+# Server: Datenordner anlegen
+sudo mkdir -p /srv/data/tandoor-automation/umzug
+sudo chown -R 1000:1000 /srv/data/tandoor-automation
+
+# Laptop, im Klon und vor dem nächsten git pull
+scp bewertung.tsv klassen.tsv ausnahmen.tsv intervalle.tsv zuordnung.tsv \
+    leosserver:/srv/data/tandoor-automation/umzug/
+scp -r bons leosserver:/srv/data/tandoor-automation/
+scp .lidl-token leosserver:/srv/data/tandoor-automation/lidl-token
+
+# Server, im Klon
+D=/srv/data/tandoor-automation
+mv $D/bons/.importiert $D/umzug/importiert.txt
+git pull && docker compose build
+docker compose run --rm app plan data import --ordner /data/umzug
+rm -r $D/umzug
+```
+
+Fehlt `bons/.importiert` auf dem Laptop, war dort nie etwas gebucht, dann entfällt das `mv`.
 
 ## Wochenplan
 
@@ -48,7 +112,7 @@ Server führen sonst je eine eigene Liste, und ein Bon landet zweimal im Bestand
 uv run plan bundle                            # Kontextbündel der kommenden Woche
 uv run plan check vorschlag/2026-W39.json     # Vorschlag gegen das Bündel prüfen
 uv run plan apply vorschlag/2026-W39.json     # prüfen und nach Tandoor schreiben
-uv run plan rate                              # Grundbewertung aus bewertung.tsv abgleichen
+uv run plan rate                              # Grundbewertung aus der Datenbank abgleichen
 uv run plan clear --dry-run                   # zeigen, was aus der kommenden Woche fiele
 uv run plan clear --week 2026-W40             # die eigenen Einträge der Woche löschen
 uv run plan clear --eintrag 181               # nur diesen Eintrag löschen
@@ -71,7 +135,7 @@ stehen in der Ausgabe von `plan clear --dry-run`.
 
 ```bash
 uv run bon fetch --dry-run   # zeigen, welche Bons fehlen
-uv run bon fetch             # fehlende Bons holen, unverändert nach bons/lidl/
+uv run bon fetch             # fehlende Bons holen, unverändert nach bons/lidl/ im Datenordner
 ```
 
 Der Ordner ist zugleich der Stand: was dort liegt, wird nicht noch einmal geholt. Abgelegt wird
@@ -114,24 +178,25 @@ Am sichersten zu finden ist sie in den Entwicklerwerkzeugen: vor der Anmeldung F
 *Netzwerkanalyse*, *Log beibehalten* anhaken, nach der Anmeldung die Zeile mit `callback?code=`
 kopieren. Oft steht sie auch einfach in der Adresszeile.
 
-Der Token landet in `.lidl-token` und wird dort bei jedem Erneuern überschrieben. Läuft er
+Der Token landet in `lidl-token` im Datenordner und wird dort bei jedem Erneuern überschrieben. Läuft er
 irgendwann ab, stellt derselbe Befehl den Zugang wieder her.
 
 ### Zuordnung der Bonnamen
 
 Lidl druckt `Gehackte Tomaten`, Tandoor führt `Stückige Tomaten (Konserve)`. Dass beides dasselbe
-meint, ist keine Ableitung, sondern eine Entscheidung. Sie steht in `zuordnung.tsv`, eine Zeile je
-Bonname, über beide Läden hinweg: `Soja Schnetzel` bei Lidl und `Soja Granulat` bei Kaufland zeigen
+meint, ist keine Ableitung, sondern eine Entscheidung. Sie steht in der Tabelle `zuordnung`, eine
+Zeile je Bonname, über beide Läden hinweg: `Soja Schnetzel` bei Lidl und `Soja Granulat` bei Kaufland zeigen
 auf dasselbe Lebensmittel und werden im Bestand addiert.
 
 ```bash
-uv run bon map             # Datei auf den Stand der Bons bringen und gegen Tandoor prüfen
-uv run bon map --katalog   # die Lebensmittel aus Tandoor ausgeben, als Vorlage zum Zuordnen
+uv run bon map                      # neue Namen aufnehmen, zuordnung.tsv schreiben, prüfen
+uv run plan data import zuordnung   # die Entscheidungen aus der Datei einlesen
+uv run bon map --katalog            # die Lebensmittel aus Tandoor, als Vorlage zum Zuordnen
 ```
 
 Von Hand kommen die ersten zwei Spalten. Die erste trägt eine ID oder `-` für alles, was es in
 Tandoor nicht gibt; angelegt wird nie etwas. Leer heißt, dass noch nicht entschieden wurde, und so
-landen neue Artikel bei jedem Lauf in der Datei. Die übrigen Spalten schreibt der Befehl, sie
+landen neue Artikel bei jedem Lauf in der Tabelle. Die übrigen Spalten schreibt der Befehl, sie
 zeigen beim Durchsehen, wohin eine ID führt und wie oft der Name vorkommt.
 
 Die zweite Spalte ist der Laden und bleibt fast immer leer: derselbe Name meint fast überall
@@ -160,7 +225,7 @@ nur der Einkauf, nicht der Code; die Meldung sagt bloß, wo hinzusehen ist. Eine
 Name in diesem Laden nie vorkommt, meldet `bon map` umgekehrt als Ballast.
 
 Die Klasse steht hier nicht. Zugeordnet wird auch, was nie in den Bestand kommt; was davon geführt
-wird, entscheidet `klassen.tsv`. Das `-` heißt deshalb nie "führt keinen Bestand".
+wird, entscheidet die Tabelle `klassen`. Das `-` heißt deshalb nie "führt keinen Bestand".
 
 ### Zugänge in den Bestand
 
@@ -169,8 +234,8 @@ uv run bon apply --seit 2026-09-01 --dry-run   # zeigen, was gebucht würde
 uv run bon apply --seit 2026-09-01             # buchen
 ```
 
-Gebucht wird nur, was einen Abgangsweg hat, also die Klassen `rezept` und `vorrat` aus
-`klassen.tsv`. Der Ort kommt aus derselben Zeile. Mehrere Positionen desselben Lebensmittels
+Gebucht wird nur, was einen Abgangsweg hat, also die Klassen `rezept` und `vorrat` aus der
+Tabelle `klassen`. Der Ort kommt aus derselben Zeile. Mehrere Positionen desselben Lebensmittels
 werden addiert, auch über Bons hinweg, und auf einen vorhandenen Eintrag aufgeschlagen statt
 danebengelegt. Zusammengeführt wird über Lebensmittel und Einheit, nicht über den Ort: ein
 Eintrag, der woanders steht, ist umgeräumt worden, und dann gewinnt der echte Schrank.
@@ -178,20 +243,20 @@ Eintrag, der woanders steht, ist umgeräumt worden, und dann gewinnt der echte S
 `--seit` grenzt ab, was noch im Haus steht. Beim ersten Lauf ist die Angabe nötig, sonst liefe
 die ganze Historie in den Bestand. Ältere Bons gelten danach als abgehandelt und kommen nicht wieder.
 
-Welche Bons gebucht sind, steht in `bons/.importiert`. Anders als beim Holen trägt die Ablage das
+Welche Bons gebucht sind, steht in der Tabelle `importiert`. Anders als beim Holen trägt die Ablage das
 nicht: ein gebuchter Bon sieht aus wie ein ungebuchter, und ein zweiter Lauf würde die Mengen
 verdoppeln.
 
-Ein Artikelname ohne Entscheidung in `zuordnung.tsv` hält den Lauf an. Ein stiller Bestandsverlust
+Ein Artikelname ohne Entscheidung in der Zuordnung hält den Lauf an. Ein stiller Bestandsverlust
 fällt erst vor dem leeren Schrank auf, ein abgebrochener Lauf sofort.
 
 ## Bewertung
 
-`bewertung.tsv` trägt je Rezept eine Note von 0 bis 5. Sie misst nicht Geschmack, sondern wie oft
+Die Tabelle `bewertung` trägt je Rezept eine Note von 0 bis 5. Sie misst nicht Geschmack, sondern wie oft
 ein Gericht darf: 5 geht quasi immer, 3 nur wenn es lange her ist, 1 nie, 0 heißt unbewertet.
 
 Tandoor hat dafür kein eigenes Feld, es mittelt die Noten im Kochprotokoll. `plan rate` hält
-deshalb genau einen Eintrag je Rezept vor und ändert ihn, statt einen zweiten anzulegen. Die Datei
+deshalb genau einen Eintrag je Rezept vor und ändert ihn, statt einen zweiten anzulegen. Die Tabelle
 ist die Quelle: wer in Tandoors Oberfläche bewertet, verzieht den Durchschnitt.
 
 ## Nährwerte

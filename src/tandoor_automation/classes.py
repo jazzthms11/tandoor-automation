@@ -1,20 +1,17 @@
 """Welche Klasse und welchen Ort ein Lebensmittel hat.
 
-Beides hängt an der Supermarkt-Kategorie und steht in `klassen.tsv`, einzelne Ausreißer in
-`ausnahmen.tsv`. Bestand führen nur die Klassen `rezept` und `vorrat`; alles andere hat keinen
+Beides hängt an der Supermarkt-Kategorie und steht in der Tabelle `klassen`, einzelne Ausreißer
+in `ausnahmen`. Bestand führen nur die Klassen `rezept` und `vorrat`; alles andere hat keinen
 Abgangsweg und würde im Inventar liegen bleiben.
 
-Der Ort wird hier gelesen und nicht aus Tandoor: nach einem Umräumen genügt dann die Datei, und
+Der Ort wird hier gelesen und nicht aus Tandoor: nach einem Umräumen genügt dann die Tabelle, und
 die Einträge, die noch auf den alten Schrank zeigen, laufen von selbst aus.
 """
 
 from dataclasses import dataclass
-from pathlib import Path
 
 from tandoor_automation.models import Food
 
-CLASSES_FILE = Path("klassen.tsv")
-EXCEPTIONS_FILE = Path("ausnahmen.tsv")
 NONE_GIVEN = "-"
 KEEPS_STOCK = frozenset({"rezept", "vorrat"})
 BUYS_FRESH = frozenset({"frisch"})
@@ -23,7 +20,7 @@ BUYS_FRESH = frozenset({"frisch"})
 
 @dataclass(frozen=True)
 class Placement:
-    """Klasse und Ort, wie sie in den Dateien stehen. Ein leerer Ort heißt: erbt von der Klasse."""
+    """Klasse und Ort, wie sie in den Tabellen stehen. Ein leerer Ort heißt: erbt von der Klasse."""
 
     stock_class: str
     location: str

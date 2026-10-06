@@ -20,6 +20,8 @@ from urllib.parse import urlencode
 
 import httpx
 
+from tandoor_automation.store import data_dir
+
 AUTHORIZE_URL = "https://accounts.lidl.com/connect/authorize"
 TOKEN_URL = "https://accounts.lidl.com/connect/token"
 LIST_URL = "https://tickets.lidlplus.com/api/v2"
@@ -35,10 +37,15 @@ TIMEOUT_SECONDS = 30
 EXPIRY_MARGIN = timedelta(minutes=1)
 VERIFIER_BYTES = 64
 
-TOKEN_FILE = Path(".lidl-token")
+TOKEN_NAME = "lidl-token"
 """Der Refresh-Token, die einzige Stelle, an der er liegt. Lidl gibt bei jedem Erneuern einen
 neuen aus und sichert nicht zu, dass der alte gültig bleibt, die Datei wird deshalb bei jedem
 Tausch überschrieben."""
+
+
+def token_file() -> Path:
+    """Der Ort des Refresh-Tokens, im Datenordner."""
+    return data_dir() / TOKEN_NAME
 
 
 class LidlAuthError(Exception):
@@ -109,7 +116,10 @@ def _request_token(payload: dict[str, str]) -> dict[str, Any]:
 
 def _store(token: str) -> None:
     """Hält den Refresh-Token fest."""
-    TOKEN_FILE.write_text(f"{token}\n", encoding="utf-8")
+    path = token_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.touch(mode=0o600)
+    path.write_text(f"{token}\n", encoding="utf-8")
 
 
 class LidlClient:
@@ -130,9 +140,10 @@ class LidlClient:
         Raises:
             LidlAuthError: Wenn noch kein Zugang besteht.
         """
-        if not TOKEN_FILE.exists():
-            raise LidlAuthError(f"Kein Zugang zu Lidl Plus, {TOKEN_FILE} fehlt")
-        self._refresh_token = TOKEN_FILE.read_text(encoding="utf-8").strip()
+        path = token_file()
+        if not path.exists():
+            raise LidlAuthError(f"Kein Zugang zu Lidl Plus, {path} fehlt")
+        self._refresh_token = path.read_text(encoding="utf-8").strip()
         self._access_token = ""
         self._expires_at = datetime.min
         self._client = httpx.Client(timeout=TIMEOUT_SECONDS)

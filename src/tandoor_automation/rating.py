@@ -1,4 +1,4 @@
-"""Die Grundbewertung der Rezepte, gepflegt in `bewertung.tsv`.
+"""Die Grundbewertung der Rezepte, gepflegt in der Tabelle `bewertung`.
 
 Die Skala misst nicht Geschmack, sondern wie oft ein Gericht darf: 5 geht quasi immer, 3 nur
 wenn es lange her ist, 1 nie. Damit lässt sie sich gegen die Planhistorie rechnen.
@@ -23,7 +23,7 @@ COLUMNS = 2
 
 
 class RatingChange(BaseModel):
-    """Was an einem Rezept zu tun ist, damit Tandoor die Note aus der Datei trägt."""
+    """Was an einem Rezept zu tun ist, damit Tandoor die Note aus der Tabelle trägt."""
 
     recipe_id: int
     stars: int
@@ -31,7 +31,7 @@ class RatingChange(BaseModel):
 
 
 def parse_ratings(text: str) -> dict[int, int]:
-    """Liest `bewertung.tsv`.
+    """Liest `bewertung.tsv`, den Export der Tabelle.
 
     Die Datei wird von Hand gepflegt, und ob zwischen zwei Spalten ein Tab oder ein Leerzeichen
     steht, sieht man ihr nicht an. Getrennt wird deshalb an beidem. Gelesen werden nur die ersten
@@ -82,13 +82,13 @@ def own_base_ratings(logs: list[CookLog], user_id: int) -> dict[int, CookLog]:
 
 
 def changes(ratings: dict[int, int], existing: dict[int, CookLog]) -> list[RatingChange]:
-    """Stellt fest, was sich zwischen Datei und Tandoor unterscheidet.
+    """Stellt fest, was sich zwischen Tabelle und Tandoor unterscheidet.
 
-    Die Datei ist die Quelle: eine Note, die dort auf 0 zurückgesetzt wurde, wird in Tandoor
+    Die Tabelle ist die Quelle: eine Note, die dort auf 0 zurückgesetzt wurde, wird in Tandoor
     gelöscht und nicht stehen gelassen.
 
     Args:
-        ratings: Note je Rezept-ID aus der Datei.
+        ratings: Note je Rezept-ID aus der Tabelle.
         existing: Die eigenen Grundbewertungen, je Rezept-ID.
 
     Returns:

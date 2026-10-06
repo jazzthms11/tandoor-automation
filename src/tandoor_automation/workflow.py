@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 
+from tandoor_automation import store
 from tandoor_automation.apply import (
     Slot,
     clearable,
@@ -28,20 +29,12 @@ from tandoor_automation.apply import (
     without,
 )
 from tandoor_automation.bundle import SPILLOVER, PlanBundle, week_days
-from tandoor_automation.classes import (
-    CLASSES_FILE,
-    EXCEPTIONS_FILE,
-    fresh_foods,
-    parse_categories,
-    parse_exceptions,
-    stock_foods,
-)
+from tandoor_automation.classes import fresh_foods, stock_foods
 from tandoor_automation.models import PlannedMeal
 from tandoor_automation.proposal import Proposal, validate_proposal
 from tandoor_automation.rating import RatingChange, changes, own_base_ratings
 from tandoor_automation.rating import payload as rating_payload
 from tandoor_automation.shopping import (
-    INTERVALS_FILE,
     Choice,
     Item,
     Need,
@@ -50,7 +43,6 @@ from tandoor_automation.shopping import (
     buy_list,
     confirmed_until,
     needs,
-    parse_intervals,
     review,
 )
 from tandoor_automation.tandoor import TandoorClient
@@ -280,8 +272,8 @@ def shopping_check(tandoor: TandoorClient, week: str, today: date) -> ShoppingCh
     Returns:
         Die Fragen samt dem Bedarf der Woche je Lebensmittel.
     """
-    categories = parse_categories(CLASSES_FILE.read_text(encoding="utf-8"))
-    exceptions = parse_exceptions(EXCEPTIONS_FILE.read_text(encoding="utf-8"))
+    categories = store.categories()
+    exceptions = store.exceptions()
     foods = tandoor.foods()
     demand = _planned_needs(tandoor, week)
     found = review(
@@ -333,7 +325,7 @@ def book_answers(
     Returns:
         Je beantworteter Frage, was gebucht wurde und bis wann es trägt.
     """
-    intervals = parse_intervals(INTERVALS_FILE.read_text(encoding="utf-8"))
+    intervals = store.intervals()
     bookings = []
     for question in found.questions:
         choice = answers.get(question.entry_id)
