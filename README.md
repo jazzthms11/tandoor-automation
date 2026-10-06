@@ -36,7 +36,8 @@ uv run plan clear --eintrag 181               # nur diesen Eintrag löschen
 
 Zwischen `bundle` und `check` sitzt der Wähler: im Gespräch Claude über den Skill unter
 `.claude/skills/wochenplan/`, später ein unbeaufsichtigter Lauf. Beide gehen durch dieselbe
-Prüfung.
+Prüfung und wählen nach denselben Regeln: sie stehen in `src/tandoor_automation/regeln/wochenplan.md`,
+der Skill trägt nur den Ablauf im Gespräch.
 
 `apply` holt den Stand frisch aus Tandoor und legt nur an, was dort noch fehlt. Ein zweiter Lauf
 über denselben Vorschlag schreibt deshalb nichts doppelt. `--dry-run` zeigt, was er tun würde.
