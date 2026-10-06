@@ -1,66 +1,31 @@
-"""Einstiegspunkt `plan`."""
+"""Einstiegspunkt `plan`.
+
+Hier wird gefragt und ausgegeben, sonst nichts. Die Abläufe selbst stehen in `workflow`, damit
+die Oberfläche dieselben Schritte über Knöpfe gehen kann.
+"""
 
 import argparse
 from datetime import date
 from pathlib import Path
 
-from tandoor_automation.apply import (
-    Slot,
-    clearable,
-    describe,
-    describe_meal,
-    match_existing,
-    meal_type_of,
-    payload,
-    share_problems,
-    split_groups,
-    together_of,
-    unfold,
-    without,
-)
-from tandoor_automation.bundle import (
-    SPILLOVER,
-    PlanBundle,
-    build_bundle,
-    next_week,
-    parse_week,
-    week_days,
-)
-from tandoor_automation.classes import (
-    CLASSES_FILE,
-    EXCEPTIONS_FILE,
-    fresh_foods,
-    parse_categories,
-    parse_exceptions,
-    stock_foods,
-)
+from tandoor_automation.apply import Slot, describe_meal
+from tandoor_automation.bundle import PlanBundle, build_bundle, next_week, parse_week
 from tandoor_automation.config import Settings
-from tandoor_automation.models import PlannedMeal
 from tandoor_automation.proposal import MARKS, Proposal, validate_proposal
-from tandoor_automation.rating import (
-    changes,
-    own_base_ratings,
-    parse_ratings,
-)
-from tandoor_automation.rating import (
-    payload as rating_payload,
-)
-from tandoor_automation.shopping import (
-    INTERVALS_FILE,
-    Choice,
-    Need,
-    Question,
-    Review,
-    buy_list,
-    confirmed_until,
-    needs,
-    parse_intervals,
-    review,
-)
-from tandoor_automation.shopping import (
-    describe as describe_question,
-)
+from tandoor_automation.rating import parse_ratings
+from tandoor_automation.shopping import Choice, Need, Question
+from tandoor_automation.shopping import describe as describe_question
 from tandoor_automation.tandoor import TandoorClient
+from tandoor_automation.workflow import (
+    LeadQuestion,
+    apply_proposal,
+    book_answers,
+    clear_week,
+    lead_questions,
+    shopping_check,
+    sync_ratings,
+    write_list,
+)
 
 BUNDLE_DIR = Path("bundle")
 RATINGS_FILE = Path("bewertung.tsv")
@@ -131,9 +96,8 @@ def _run_apply(path: Path, dry_run: bool) -> None:
     wie er jetzt ist, nicht gegen den, wie er beim Wählen war. Ist die Woche danach vollständig in
     Tandoor, ist die Datei überflüssig: Tandoor ist die einzige Wahrheit, sie wird gelöscht.
 
-    Geschrieben wird nicht der Vorschlag selbst, sondern seine entfaltete Form: ein geteilter Platz
-    zerfällt in einen Eintrag je Tag und Esser, und jeder Eintrag mit Rezept außer dem Abendessen
-    trägt die Marken seiner Esser. Auch `--dry-run` fragt deshalb vorher nach der Aufteilung.
+    Auch `--dry-run` fragt vorher nach der Aufteilung der geteilten Plätze, denn erst sie sagt,
+    welche Einträge entstehen.
 
     Args:
         path: Pfad der Vorschlagsdatei.
@@ -142,51 +106,35 @@ def _run_apply(path: Path, dry_run: bool) -> None:
     proposal = _read_proposal(path)
     with TandoorClient(Settings()) as tandoor:
         bundle = build_bundle(tandoor, proposal.week)
-        plan = unfold(proposal, together_of(bundle), _ask_leads(proposal, bundle))
-        matches = match_existing(plan, bundle)
-        rest = without(bundle, [twin for _, twin in matches if twin])
-        _report(validate_proposal(plan, rest) + share_problems(plan))
-        for entry, twin in matches:
-            meal_type = meal_type_of(bundle, entry)
-            line = describe(entry, meal_type)
-            if twin is not None:
-                print(f"steht schon: {line}")
-            elif dry_run or meal_type is None:
-                print(f"würde schreiben: {line}")
-            else:
-                tandoor.create_meal(payload(entry, meal_type))
-                print(f"geschrieben: {line}")
+        leads = _ask_leads(lead_questions(proposal, bundle))
+        applied = apply_proposal(tandoor, proposal, bundle, leads, dry_run)
+    _report(applied.problems)
+    for outcome, line in applied.lines:
+        print(f"{outcome}: {line}")
     if not dry_run:
         path.unlink()
 
 
-def _ask_leads(proposal: Proposal, bundle: PlanBundle) -> dict[Slot, int]:
-    """Fragt für jeden geteilten Platz, mit welchem Gericht der erste Esser anfängt.
+def _ask_leads(questions: list[LeadQuestion]) -> dict[Slot, int]:
+    """Stellt die Fragen nach der Aufteilung im Terminal.
 
-    Gefragt wird nur bei einer ungeraden Zahl von Tagen. Nur dann kommt eines der Gerichte öfter
-    auf denselben Teller als das andere, und nur dann ist die Antwort eine Entscheidung. Ohne
-    Terminal im Rücken und bei leerer Eingabe fängt der erste Esser mit dem ersten Gericht an.
+    Ohne Terminal im Rücken und bei leerer Eingabe fängt der erste Esser mit dem ersten Gericht
+    an.
 
     Args:
-        proposal: Der Vorschlag des Wählers, noch nicht entfaltet.
-        bundle: Das Bündel derselben Woche, für die Namen der Mahlzeiten.
+        questions: Die Fragen aus `lead_questions`.
 
     Returns:
         Je gefragtem Platz das gewählte Gericht als Platz in seiner Gruppe.
     """
-    names = {meal_type.id: meal_type.name for meal_type in bundle.meal_types}
     leads = {}
-    for slot, group in split_groups(proposal).items():
-        meal_type_id, start, end = slot
-        days = (end - start).days + 1
-        if days % len(group) == 0:
-            continue
-        times = -(-days // len(group))
-        print(f"\n{names.get(meal_type_id, meal_type_id)} {start} bis {end}, {days} Tage")
-        print(f"  Welches Gericht isst {MARKS[0]} {times}-mal?")
-        for index, entry in enumerate(group):
-            print(f"  {index} {entry.recipe_name}")
-        leads[slot] = _read_lead(len(group))
+    for question in questions:
+        _, start, end = question.slot
+        print(f"\n{question.meal_name} {start} bis {end}, {question.days} Tage")
+        print(f"  Welches Gericht isst {MARKS[0]} {question.times}-mal?")
+        for index, dish in enumerate(question.dishes):
+            print(f"  {index} {dish}")
+        leads[question.slot] = _read_lead(len(question.dishes))
     return leads
 
 
@@ -207,9 +155,8 @@ def _read_lead(count: int) -> int:
 def _run_clear(week: str | None, ids: list[int], dry_run: bool) -> None:
     """Nimmt die eigenen Planeinträge einer Woche wieder aus Tandoor heraus.
 
-    Gelöscht wird nur, was unter dem eigenen Token angelegt wurde: die Instanz ist geteilt, und
-    der Platz eines Mitessers ist keine eigene Entscheidung. Fremde Einträge werden genannt und
-    bleiben stehen.
+    Fremde Einträge werden genannt und bleiben stehen. Eine ID, die nicht in der Woche liegt,
+    hält den Lauf an, bevor etwas gelöscht ist.
 
     Args:
         week: Zielwoche als ISO-Woche. Ohne Angabe die kommende Woche.
@@ -217,68 +164,42 @@ def _run_clear(week: str | None, ids: list[int], dry_run: bool) -> None:
         dry_run: Nur zeigen, was gelöscht würde.
     """
     week = week or next_week(date.today())
-    days = week_days(week)
     with TandoorClient(Settings()) as tandoor:
-        meals = tandoor.meal_plan(days[0], days[-1] + SPILLOVER)
-        mine, others = clearable(meals, days, tandoor.current_user_id(), set(ids))
-        _report([f"{entry} liegt nicht in {week}" for entry in _missing(ids, mine, others)])
-        for meal in others:
-            print(f"fremd, bleibt: {describe_meal(meal)}")
-        for meal in mine:
-            if dry_run:
-                print(f"würde löschen: {describe_meal(meal)}")
-            else:
-                tandoor.delete_meal(meal.id)
-                print(f"gelöscht: {describe_meal(meal)}")
-    verb = "zu löschen" if dry_run else "gelöscht"
-    print(f"{week}: {len(mine)} Einträge {verb}, {len(others)} fremd")
-
-
-def _missing(ids: list[int], mine: list[PlannedMeal], others: list[PlannedMeal]) -> list[int]:
-    """Sagt, welche der genannten IDs in der Woche gar nicht vorkommen."""
-    found = {meal.id for meal in mine + others}
-    return sorted(set(ids) - found)
+        cleared = clear_week(tandoor, week, ids, dry_run)
+    _report([f"{entry} liegt nicht in {week}" for entry in cleared.missing])
+    for meal in cleared.others:
+        print(f"fremd, bleibt: {describe_meal(meal)}")
+    verb = "würde löschen" if dry_run else "gelöscht"
+    for meal in cleared.mine:
+        print(f"{verb}: {describe_meal(meal)}")
+    total = "zu löschen" if dry_run else "gelöscht"
+    print(f"{week}: {len(cleared.mine)} Einträge {total}, {len(cleared.others)} fremd")
 
 
 def _run_rate(dry_run: bool) -> None:
     """Gleicht die Grundbewertung aus `bewertung.tsv` mit Tandoors Kochprotokoll ab.
 
-    Die Datei ist die Quelle: eine Note, die dort auf 0 steht, wird in Tandoor gelöscht. Geändert
-    wird der vorhandene Eintrag, denn Tandoor mittelt die Noten eines Rezepts, statt die neueste
-    zu nehmen.
+    Die Datei ist die Quelle: eine Note, die dort auf 0 steht, wird in Tandoor gelöscht.
 
     Args:
         dry_run: Nur zeigen, was geschrieben würde.
     """
     ratings = parse_ratings(RATINGS_FILE.read_text(encoding="utf-8"))
     with TandoorClient(Settings()) as tandoor:
-        names = {recipe.id: recipe.name for recipe in tandoor.recipes()}
-        unknown = sorted(set(ratings) - set(names))
-        if unknown:
-            print(f"{RATINGS_FILE}: unbekannte Rezepte {unknown}")
-            raise SystemExit(1)
-        existing = own_base_ratings(tandoor.cook_logs(), tandoor.current_user_id())
-        todo = changes(ratings, existing)
-        for change in todo:
-            verb = "löschen" if not change.stars else ("ändern" if change.log_id else "anlegen")
-            print(f"{'würde ' if dry_run else ''}{verb}: {change.stars}★ {names[change.recipe_id]}")
-            if dry_run:
-                continue
-            if not change.stars and change.log_id is not None:
-                tandoor.delete_cook_log(change.log_id)
-            elif change.log_id is not None:
-                tandoor.update_cook_log(change.log_id, rating_payload(change))
-            else:
-                tandoor.create_cook_log(rating_payload(change))
-    print(f"{len(todo)} Änderungen, {len(ratings) - len(todo)} schon richtig")
+        synced = sync_ratings(tandoor, ratings, dry_run)
+    if synced.unknown:
+        print(f"{RATINGS_FILE}: unbekannte Rezepte {synced.unknown}")
+        raise SystemExit(1)
+    for change in synced.todo:
+        verb = "löschen" if not change.stars else ("ändern" if change.log_id else "anlegen")
+        print(
+            f"{'würde ' if dry_run else ''}{verb}: {change.stars}★ {synced.names[change.recipe_id]}"
+        )
+    print(f"{len(synced.todo)} Änderungen, {len(ratings) - len(synced.todo)} schon richtig")
 
 
 def _run_shop(week: str | None, dry_run: bool) -> None:
     """Fragt den Bestand ab und schreibt daraus die Einkaufsliste der Woche.
-
-    Der Schritt liegt zwischen Plan und Einkauf: die Gerichte müssen stehen, damit die Fragen
-    entstehen, und die Bons der Vorwoche müssen gebucht sein, damit die Staffel auf dem richtigen
-    Bestand rechnet.
 
     Args:
         week: Zielwoche als ISO-Woche. Ohne Angabe die kommende Woche.
@@ -287,37 +208,24 @@ def _run_shop(week: str | None, dry_run: bool) -> None:
     target = week or next_week(date.today())
     today = date.today()
     with TandoorClient(Settings()) as tandoor:
-        categories = parse_categories(CLASSES_FILE.read_text(encoding="utf-8"))
-        exceptions = parse_exceptions(EXCEPTIONS_FILE.read_text(encoding="utf-8"))
-        foods = tandoor.foods()
-        demand = _planned_needs(tandoor, target)
-        found = review(
-            set(demand),
-            tandoor.inventory(),
-            stock_foods(foods, categories, exceptions),
-            fresh_foods(foods, categories, exceptions),
-            {unit_id: name for name, unit_id in tandoor.units().items()},
-            today,
-        )
-        answers = _ask(found.questions, demand)
-        _book_answers(tandoor, found, answers, today, dry_run)
-        _write_list(tandoor, found, answers, demand, dry_run)
-
-
-def _planned_needs(tandoor: TandoorClient, week: str) -> dict[int, Need]:
-    """Sammelt, was die Gerichte einer Woche brauchen, je Lebensmittel.
-
-    Die Zutaten stehen nur im Detailabruf, das ist ein Aufruf je Rezept. Bei einer Woche sind das
-    eine Handvoll, die Rezeptliste im Ganzen zu holen wäre teurer. Jedes Rezept wird einmal
-    geholt, auch wenn es zweimal im Plan steht.
-    """
-    days = week_days(week)
-    meals = tandoor.meal_plan(days[0], days[-1] + SPILLOVER)
-    details = {
-        recipe_id: tandoor.recipe_detail(recipe_id)
-        for recipe_id in sorted({meal.recipe_id for meal in meals if meal.recipe_id})
-    }
-    return needs(meals, details)
+        check = shopping_check(tandoor, target, today)
+        answers = _ask(check.review.questions, check.demand)
+        bookings = book_answers(tandoor, check.review, answers, today, dry_run)
+        listed = write_list(tandoor, check, answers, dry_run)
+    for booking in bookings:
+        if dry_run:
+            print(
+                f"würde buchen: {booking.question.food_name} auf {booking.choice.amount}, "
+                f"gefragt wieder ab {booking.trusted_until}"
+            )
+    for item in listed.added:
+        need = check.demand.get(item.food_id)
+        reason = f" ({', '.join(need.recipes)})" if need else ""
+        print(f"{'würde ' if dry_run else ''}auf die Liste: {item.food_name}{reason}")
+    print(
+        f"{len(answers)} von {len(check.review.questions)} Fragen beantwortet, "
+        f"{len(listed.added)} auf die Liste, {listed.already} standen schon drauf"
+    )
 
 
 def _ask(questions: list[Question], demand: dict[int, Need]) -> dict[int, Choice]:
@@ -361,74 +269,6 @@ def _read_choice(question: Question) -> Choice | None:
         if answer.isdigit() and int(answer) < len(question.choices):
             return question.choices[int(answer)]
         print(f"  {0} bis {len(question.choices) - 1}, oder leer zum Überspringen")
-
-
-def _book_answers(
-    tandoor: TandoorClient,
-    found: Review,
-    answers: dict[int, Choice],
-    today: date,
-    dry_run: bool,
-) -> None:
-    """Schreibt die Antworten in den Bestand.
-
-    Unbeantwortete Fragen fassen den Bestand nicht an: keine Antwort ist keine Bestätigung. Auf
-    die Liste kommen sie trotzdem.
-    """
-    intervals = parse_intervals(INTERVALS_FILE.read_text(encoding="utf-8"))
-    for question in found.questions:
-        choice = answers.get(question.entry_id)
-        if choice is None:
-            continue
-        trusted_until = confirmed_until(today, question.food_id, intervals)
-        if dry_run:
-            print(
-                f"würde buchen: {question.food_name} auf {choice.amount}, "
-                f"gefragt wieder ab {trusted_until}"
-            )
-        else:
-            tandoor.update_inventory_entry(question.entry_id, choice.amount, trusted_until)
-
-
-def _write_list(
-    tandoor: TandoorClient,
-    found: Review,
-    answers: dict[int, Choice],
-    demand: dict[int, Need],
-    dry_run: bool,
-) -> None:
-    """Schreibt das Fehlende auf die Einkaufsliste, je Gericht ein Eintrag.
-
-    Braucht die Woche ein Lebensmittel für zwei Gerichte, stehen zwei Einträge da, jeder an
-    seinem Rezeptblock. Tandoor zeigt dann eine Zeile mit 2 und beiden Gerichten, bei einem
-    Gericht keine Zahl. Vorratsware ohne Gericht bekommt einen Eintrag ohne Block.
-
-    Ein Block wird erst angelegt, wenn etwas aus seinem Gericht gekauft wird, und hängt schon
-    einer am Planeintrag, wird er wiederverwendet.
-    """
-    listed = tandoor.shopping_list()
-    blocks = tandoor.shopping_recipes()
-    wanted = buy_list(found, answers)
-    todo = [item for item in wanted if item.food_id not in listed]
-    for item in todo:
-        need = demand.get(item.food_id)
-        meals = list(need.recipes.values()) if need else []
-        reason = f" ({', '.join(need.recipes)})" if need else ""
-        if dry_run:
-            print(f"würde auf die Liste: {item.food_name}{reason}")
-            continue
-        for meal in meals or [None]:
-            block_id = None
-            if meal is not None:
-                if meal.id not in blocks:
-                    blocks[meal.id] = tandoor.create_shopping_recipe(meal)
-                block_id = blocks[meal.id]
-            tandoor.create_shopping_entry(item.food_id, block_id)
-        print(f"auf die Liste: {item.food_name}{reason}")
-    print(
-        f"{len(answers)} von {len(found.questions)} Fragen beantwortet, "
-        f"{len(todo)} auf die Liste, {len(wanted) - len(todo)} standen schon drauf"
-    )
 
 
 def main() -> None:
