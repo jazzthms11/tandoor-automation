@@ -22,6 +22,26 @@ cp .env.example .env   # Tandoor-Token eintragen
 
 Ein Token wird in Tandoor unter *Einstellungen, API* erzeugt.
 
+### Im Container
+
+Auf dem Server läuft dieselbe CLI als Image, gebaut aus dem Klon unter
+`/srv/config/tandoor-automation`. Die `.env` liegt daneben und kommt nie ins Image.
+
+```bash
+git pull
+docker compose build
+docker compose run --rm app plan bundle
+docker compose run --rm app plan shop --dry-run
+```
+
+Jeder Befehl startet einen Container und räumt ihn danach weg. Gearbeitet wird im Klon selbst:
+die TSV-Dateien kommen aus Git, `bundle/`, `vorschlag/`, `bons/` und `.lidl-token` liegen
+daneben. `TZ=Europe/Berlin` setzt die Compose-Datei, sonst stünden die Planeinträge zwei Stunden
+daneben. In `user:` steht die eigene ID auf dem Server, nachzusehen mit `id`.
+
+Bons werden nur an einer Stelle gebucht, solange `bons/.importiert` eine Datei ist. Laptop und
+Server führen sonst je eine eigene Liste, und ein Bon landet zweimal im Bestand.
+
 ## Wochenplan
 
 ```bash

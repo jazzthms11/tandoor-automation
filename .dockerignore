@@ -1,0 +1,15 @@
+# Ins Image kommt nur, was das Dockerfile kopiert. Diese Liste hält alles andere aus dem
+# Baukontext heraus, vor allem die Geheimnisse: wer das Image hat, hätte sonst den Token.
+.env
+.lidl-token
+bons/
+bundle/
+vorschlag/
+cache/
+
+.git/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
