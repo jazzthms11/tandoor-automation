@@ -78,3 +78,109 @@ button.klein {
 .abschluss {
   margin-top: 2rem;
 }
+
+.woche {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.woche a {
+  font-size: 1.6rem;
+  text-decoration: none;
+  padding: 0 0.75rem;
+}
+
+.ort {
+  font-size: 1.1rem;
+  margin: 1.5rem 0 0.5rem;
+  color: var(--pico-muted-color);
+}
+
+.frage {
+  border-bottom: 1px solid var(--pico-muted-border-color);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.frage legend small,
+.bedarf,
+.notiz {
+  display: block;
+  color: var(--pico-muted-color);
+}
+
+/* Die Antworten als Knöpfe: das Feld selbst ist unsichtbar, die Beschriftung ist der Knopf. */
+.knoepfe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.knoepfe label {
+  margin: 0;
+}
+
+.knoepfe input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.knoepfe span {
+  display: inline-block;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.knoepfe input:checked + span {
+  background: var(--pico-primary-background);
+  border-color: var(--pico-primary-background);
+  color: var(--pico-primary-inverse);
+}
+
+.knoepfe input:focus-visible + span {
+  outline: 2px solid var(--pico-primary);
+}
+
+.eintraege {
+  padding: 0;
+}
+
+.eintraege li {
+  list-style: none;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--pico-muted-border-color);
+}
+
+.wann {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--pico-muted-color);
+}
+
+nav a[aria-current="page"] {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
+.auswahl {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin: 0;
+}
+
+.auswahl input {
+  margin-top: 0.3rem;
+}
+
+.ergebnis h3 {
+  font-size: 1rem;
+  margin: 1rem 0 0.25rem;
+}

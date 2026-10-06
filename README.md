@@ -60,6 +60,12 @@ docker compose logs -f web    # was er tut
 
 Erreichbar unter `http://leosserver:8095`, nur im Heimnetz und über WireGuard. Ein Login gibt es
 nicht, abgesichert ist sie über den Netzweg. Einen anderen Port setzt `WEB_PORT` in der `.env`.
+
+| Seite | ersetzt | was sie tut |
+|---|---|---|
+| Wochenplan | `plan clear` | Einträge einer Woche, eigene zum Auswählen und Zurücknehmen |
+| Einkauf | `plan shop` | Bestandsfragen nach Ort als Knöpfe, Vorschau, dann buchen und Liste schreiben |
+| Bewertung | `plan rate` | alle Rezepte mit Sternen, ein Klick schreibt sofort nach Tandoor |
 Nach `git pull` holen `docker compose build` und `docker compose up -d` die neue Fassung.
 
 Gebaut ist sie mit FastAPI, Jinja2 und htmx: der Server liefert fertiges HTML, ein Klick tauscht
@@ -151,7 +157,8 @@ der Skill trägt nur den Ablauf im Gespräch.
 `clear` ist der Rückweg und löscht nur, was unter dem eigenen Token angelegt wurde: die Instanz ist
 geteilt, der Platz eines Mitessers bleibt stehen und wird genannt. Maßgeblich ist der erste Tag
 eines Eintrags, ein Abendessen für zwei Abende darf also über den Freitag hinausragen. Die IDs
-stehen in der Ausgabe von `plan clear --dry-run`.
+stehen in der Ausgabe von `plan clear --dry-run`. In der Oberfläche ist das die Seite *Wochenplan*,
+dort werden die Einträge angehakt statt per ID genannt.
 
 ## Kassenbons
 

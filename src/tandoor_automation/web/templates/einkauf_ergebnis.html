@@ -1,0 +1,21 @@
+<article class="ergebnis">
+  <header><strong>{{ "Vorschau, noch nichts geschrieben" if preview else "Geschrieben" }}</strong></header>
+  {% if stale %}
+  <p class="warnung">Inzwischen anders gebucht, Antwort verworfen und gekauft: {{ stale|join(", ") }}</p>
+  {% endif %}
+  <p>{{ answered }} von {{ asked }} Fragen beantwortet, {{ added|length }} auf die Liste{% if already %}, {{ already }} standen schon drauf{% endif %}.</p>
+  {% if bookings %}
+  <h3>{{ "Würde buchen" if preview else "Gebucht" }}</h3>
+  <ul>
+    {% for booking in bookings %}
+    <li>{{ booking.question.food_name }}: {{ booking.choice.label }} <small>gefragt wieder ab {{ booking.trusted_until|tag }}</small></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if added %}
+  <h3>{{ "Käme auf die Liste" if preview else "Auf der Liste" }}</h3>
+  <ul>
+    {% for item, recipes in added %}<li>{{ item.food_name }}{% if recipes %} <small>{{ recipes }}</small>{% endif %}</li>{% endfor %}
+  </ul>
+  {% endif %}
+</article>
