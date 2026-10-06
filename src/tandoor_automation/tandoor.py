@@ -76,6 +76,14 @@ class TandoorClient:
             recipe.rating = stars.get(recipe.id, 0)
         return recipes
 
+    def recipe_names(self) -> dict[int, str]:
+        """Holt nur Namen je Rezept-ID, ohne die Bewertung nachzuholen.
+
+        Returns:
+            Name je Rezept-ID.
+        """
+        return {item["id"]: item["name"] for item in self._pages("/api/recipe/", {})}
+
     def ratings(self) -> dict[int, int]:
         """Holt die eigene Bewertung je Rezept.
 
@@ -103,13 +111,17 @@ class TandoorClient:
         response.raise_for_status()
         return int(response.json()[0]["user"]["id"])
 
-    def cook_logs(self) -> list[CookLog]:
+    def cook_logs(self, recipe_id: int | None = None) -> list[CookLog]:
         """Holt das Kochprotokoll.
 
+        Args:
+            recipe_id: Nur die Einträge dieses Rezepts. Ohne Angabe alle.
+
         Returns:
-            Alle Einträge, auch die der Mitesser.
+            Die Einträge, auch die der Mitesser.
         """
-        return [CookLog.model_validate(item) for item in self._pages("/api/cook-log/", {})]
+        params = {} if recipe_id is None else {"recipe": str(recipe_id)}
+        return [CookLog.model_validate(item) for item in self._pages("/api/cook-log/", params)]
 
     def create_cook_log(self, body: dict[str, object]) -> CookLog:
         """Legt einen Eintrag im Kochprotokoll an.

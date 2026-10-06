@@ -1,26 +1,50 @@
 # Betrieb auf leosserver, aus dem Klon unter /srv/config/tandoor-automation.
 #
 #   docker compose build
-#   docker compose run --rm app plan bundle
+#   docker compose up -d                       # die Oberfläche, läuft dauerhaft
+#   docker compose run --rm app plan bundle    # die CLI, ein Container je Befehl
 #
-# Noch kein Dienst, der dauerhaft läuft: jeder Befehl startet einen Container und räumt ihn danach
-# weg. `run` hängt ein Terminal an, die Rückfragen von plan apply und plan shop gehen also.
+# Zwei Dienste aus demselben Image. `web` läuft dauerhaft und startet nach einem Neustart des
+# Servers von selbst. `app` ist die CLI: jeder Befehl startet einen Container und räumt ihn danach
+# weg, `run` hängt ein Terminal an, die Rückfragen von plan apply und plan shop gehen also. Das
+# Profil `cli` hält `app` aus `docker compose up` heraus, `run` startet es trotzdem.
+
+# Was beide Dienste teilen. `x-` heißt für Compose: kein Dienst, nur ein Baustein, und `<<: *basis`
+# fügt ihn unten ein.
+x-basis: &basis
+  build: .
+  image: tandoor-automation:latest
+  env_file: .env
+  environment:
+    # Container laufen sonst in UTC, und plan apply schriebe das Mittagessen auf 14:00.
+    TZ: Europe/Berlin
+    DATA_DIR: /data
+  # Der eigene Nutzer auf dem Server, damit Dateien im Klon nicht root gehören. Nachsehen mit `id`.
+  user: "1000:1000"
+  # Der Klon ist das Arbeitsverzeichnis, dort landen bundle/, vorschlag/ und die Exporte der
+  # Tabellen. Datenbank, Rohbons und Lidl-Zugang liegen außerhalb, unter /srv/data, und gehören
+  # dem Nutzer aus `user:`.
+  volumes:
+    - .:/work
+    - /srv/data/tandoor-automation:/data
+  mem_limit: 256m
 
 services:
   app:
-    build: .
-    image: tandoor-automation:latest
-    env_file: .env
-    environment:
-      # Container laufen sonst in UTC, und plan apply schriebe das Mittagessen auf 14:00.
-      TZ: Europe/Berlin
-      DATA_DIR: /data
-    # Der eigene Nutzer auf dem Server, damit Dateien im Klon nicht root gehören. Nachsehen mit `id`.
-    user: "1000:1000"
-    # Der Klon ist das Arbeitsverzeichnis, dort landen bundle/, vorschlag/ und die Exporte der
-    # Tabellen. Datenbank, Rohbons und Lidl-Zugang liegen außerhalb, unter /srv/data, und gehören
-    # dem Nutzer aus `user:`.
-    volumes:
-      - .:/work
-      - /srv/data/tandoor-automation:/data
-    mem_limit: 256m
+    <<: *basis
+    profiles: [cli]
+
+  web:
+    <<: *basis
+    command: uvicorn tandoor_automation.web.app:app --host 0.0.0.0 --port 8000
+    # Links der Port auf dem Server, rechts der im Container. Erreichbar im Heimnetz und über
+    # WireGuard, die Fritzbox leitet ihn nicht weiter. Ein anderer Port über WEB_PORT in der .env.
+    ports:
+      - "${WEB_PORT:-8095}:8000"
+    restart: unless-stopped
+    # Docker fragt alle 30 Sekunden nach, `docker compose ps` zeigt dann healthy oder unhealthy.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

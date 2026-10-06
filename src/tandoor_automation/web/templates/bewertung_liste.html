@@ -1,0 +1,4 @@
+<p><small>{{ rows|length }} von {{ total }} Rezepten</small></p>
+<ul class="rezepte">
+  {% for row in rows %}{% include "bewertung_zeile.html" %}{% endfor %}
+</ul>

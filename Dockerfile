@@ -25,7 +25,10 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY src ./src
 RUN uv sync --frozen --no-dev --no-editable
 
-# Gearbeitet wird im eingehängten Verzeichnis, dort liegen die TSV-Dateien und der Laufzustand.
+# Gearbeitet wird im eingehängten Klon, dort landen bundle/, vorschlag/ und die Exporte.
 WORKDIR /work
 
+# Die Oberfläche hört auf 8000, welcher Port auf dem Server dazu passt, sagt die Compose-Datei.
+# Ohne Befehl zeigt der Container die Hilfe der CLI, die Compose-Datei gibt jedem Dienst seinen.
+EXPOSE 8000
 CMD ["plan", "--help"]

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Bewertung{% endblock %}
+{% block content %}
+<hgroup>
+  <h1>Bewertung</h1>
+  <p>Wie oft ein Gericht darf, nicht wie gut es schmeckt. Ein Klick schreibt sofort nach Tandoor.</p>
+</hgroup>
+
+<details>
+  <summary>Was die Sterne heißen</summary>
+  <ul>
+    {% for stars, text in meaning.items() if stars %}
+    <li><span class="legende">{{ "★" * stars }}</span> {{ text }}</li>
+    {% endfor %}
+    <li>Den gesetzten Stern nochmal antippen nimmt die Note zurück.</li>
+  </ul>
+</details>
+
+{% if gone %}
+<article>
+  <header><strong>Nicht mehr in Tandoor</strong></header>
+  <p>Diese Noten gehören zu Rezepten, die es nicht mehr gibt. Solange sie dastehen, bricht der Abgleich ab.</p>
+  <ul>
+    {% for rating in gone %}
+    <li id="weg-{{ rating.recipe_id }}">
+      {{ rating.recipe_id }} {{ rating.note or "ohne Namen" }}
+      <button class="secondary outline klein" hx-post="/bewertung/{{ rating.recipe_id }}/entfernen"
+              hx-target="#weg-{{ rating.recipe_id }}" hx-swap="outerHTML"
+              hx-confirm="Note für {{ rating.recipe_id }} entfernen?">Entfernen</button>
+    </li>
+    {% endfor %}
+  </ul>
+</article>
+{% endif %}
+
+<form role="search" hx-get="/bewertung" hx-target="#liste" hx-trigger="input changed delay:250ms from:[name=q], change from:[name=sterne]"
+      hx-push-url="true" onsubmit="return false">
+  <input type="search" name="q" value="{{ q }}" placeholder="Rezept suchen" aria-label="Rezept suchen">
+  <select name="sterne" aria-label="Nach Sternen filtern">
+    <option value="">alle ({{ total }})</option>
+    {% for stars in [0, 5, 4, 3, 2, 1] %}
+    <option value="{{ stars }}"{% if sterne == stars|string %} selected{% endif %}>
+      {{ "★" * stars if stars else "unbewertet" }} ({{ counts[stars] }})
+    </option>
+    {% endfor %}
+  </select>
+</form>
+
+<div id="liste">{% include "bewertung_liste.html" %}</div>
+
+<footer class="abschluss">
+  <button class="secondary" hx-post="/bewertung/abgleich" hx-target="#abgleich" hx-disabled-elt="this">
+    Mit Tandoor abgleichen
+  </button>
+  <div id="abgleich" aria-live="polite"></div>
+  <p><small>Neues Rezept in Tandoor angelegt? <a href="/bewertung?neu=1">Rezeptliste neu laden</a></small></p>
+</footer>
+{% endblock %}

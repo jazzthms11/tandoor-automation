@@ -61,3 +61,14 @@ def test_probelauf_schreibt_nichts():
 def test_doppelter_schluessel_faellt_auf():
     with pytest.raises(ValueError, match="mehrfach"):
         tables.load(tables.TABLES["intervalle"], "7\t239\tEi\n14\t239\tEi\n", dry_run=False)
+
+
+def test_note_aus_der_oberflaeche_liest_sich_unveraendert_zurueck():
+    bewertung = "# Kopf\n\n# --- Pasta ---\n5\t12\tBolognese\n"
+    tables.load(tables.TABLES["bewertung"], bewertung, dry_run=False)
+    store.set_rating(12, 4)
+    store.set_rating(30, 3, "Carbonara")
+    assert _export("bewertung").endswith("# --- Pasta ---\n4\t12\tBolognese\n3\t30\tCarbonara\n")
+    assert tables.load(tables.TABLES["bewertung"], _export("bewertung"), True) == tables.Diff(
+        0, 0, 0
+    )

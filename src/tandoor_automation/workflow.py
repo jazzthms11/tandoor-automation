@@ -248,13 +248,36 @@ def sync_ratings(tandoor: TandoorClient, ratings: dict[int, int], dry_run: bool)
     todo = changes(ratings, existing)
     if not dry_run:
         for change in todo:
-            if not change.stars and change.log_id is not None:
-                tandoor.delete_cook_log(change.log_id)
-            elif change.log_id is not None:
-                tandoor.update_cook_log(change.log_id, rating_payload(change))
-            else:
-                tandoor.create_cook_log(rating_payload(change))
+            _write_rating(tandoor, change)
     return RatingSync([], todo, names)
+
+
+def rate_recipe(tandoor: TandoorClient, recipe_id: int, stars: int) -> RatingChange | None:
+    """Trägt die Note eines einzelnen Rezepts nach Tandoor, wie `sync_ratings` für alle.
+
+    Args:
+        tandoor: Der Zugang zu Tandoor.
+        recipe_id: Das Rezept.
+        stars: Die neue Note, 0 löscht die Grundbewertung.
+
+    Returns:
+        Was geschrieben wurde, oder nichts, wenn Tandoor die Note schon trug.
+    """
+    existing = own_base_ratings(tandoor.cook_logs(recipe_id), tandoor.current_user_id())
+    todo = changes({recipe_id: stars}, existing)
+    for change in todo:
+        _write_rating(tandoor, change)
+    return todo[0] if todo else None
+
+
+def _write_rating(tandoor: TandoorClient, change: RatingChange) -> None:
+    """Legt die Grundbewertung an, ändert oder löscht sie, je nach Vorhaben."""
+    if not change.stars and change.log_id is not None:
+        tandoor.delete_cook_log(change.log_id)
+    elif change.log_id is not None:
+        tandoor.update_cook_log(change.log_id, rating_payload(change))
+    else:
+        tandoor.create_cook_log(rating_payload(change))
 
 
 def shopping_check(tandoor: TandoorClient, week: str, today: date) -> ShoppingCheck:

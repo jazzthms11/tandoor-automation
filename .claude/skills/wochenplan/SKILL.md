@@ -67,8 +67,10 @@ zu umgehen.
 ## Wenn Leo eine Bewertung ändern will
 
 Die Noten stehen in der Tabelle `bewertung` der Datenbank auf leosserver, nicht im Repo und nicht
-in Tandoor. Von hier aus kommst Du nicht an sie heran, nenn Leo deshalb die Schritte auf dem
-Server, im Klon unter `/srv/config/tandoor-automation`:
+in Tandoor. Von hier aus kommst Du nicht an sie heran. Verweise Leo auf die Seite *Bewertung* der
+Oberfläche unter `http://leosserver:8095/bewertung`: ein Klick auf einen Stern speichert und schreibt
+sofort nach Tandoor. Ohne Oberfläche geht es über die CLI auf dem Server, im Klon unter
+`/srv/config/tandoor-automation`:
 
 ```bash
 docker compose run --rm app plan data export bewertung   # schreibt bewertung.tsv
@@ -81,5 +83,5 @@ docker compose run --rm app plan rate
 - **Nicht in Tandoors Oberfläche bewerten.** Tandoor mittelt die Noten eines Rezepts, statt die
   neueste zu nehmen → ein Klick dort verzieht die Note und die Datei stimmt nicht mehr
 - **Eine Note auf 0 setzen löscht sie** in Tandoor, das Rezept gilt dann wieder als unbewertet
-- **Ein neues Rezept fehlt in der Tabelle.** Eine Zeile in der Datei anhängen, Sterne und ID
-  reichen, der Rest ist Gedächtnisstütze
+- **Ein neues Rezept fehlt in der Tabelle.** Die Seite zeigt alle Rezepte aus Tandoor, ein Stern
+  legt die Zeile an. In der Datei reicht eine angehängte Zeile mit Sternen und ID
