@@ -66,13 +66,20 @@ zu umgehen.
 
 ## Wenn Leo eine Bewertung ändern will
 
-Die Noten stehen in `bewertung.tsv` im Repo, eine Zeile je Rezept, erste Spalte die Sterne. Die
-Datei ist die Quelle, nicht Tandoor.
+Die Noten stehen in der Tabelle `bewertung` der Datenbank auf leosserver, nicht im Repo und nicht
+in Tandoor. Von hier aus kommst Du nicht an sie heran, nenn Leo deshalb die Schritte auf dem
+Server, im Klon unter `/srv/config/tandoor-automation`:
 
-- **Ändere die Zeile in der Datei**, dann `uv run plan rate`. Der Befehl fasst den vorhandenen
-  Eintrag im Kochprotokoll an, statt einen zweiten anzulegen
+```bash
+docker compose run --rm app plan data export bewertung   # schreibt bewertung.tsv
+# Zeile ändern: erste Spalte die Sterne, zweite die Rezept-ID
+docker compose run --rm app plan data import bewertung
+docker compose run --rm app plan rate
+```
+
+- **`plan rate` fasst den vorhandenen Eintrag** im Kochprotokoll an, statt einen zweiten anzulegen
 - **Nicht in Tandoors Oberfläche bewerten.** Tandoor mittelt die Noten eines Rezepts, statt die
   neueste zu nehmen → ein Klick dort verzieht die Note und die Datei stimmt nicht mehr
 - **Eine Note auf 0 setzen löscht sie** in Tandoor, das Rezept gilt dann wieder als unbewertet
-- **Ein neues Rezept fehlt in der Datei.** Häng eine Zeile an, Sterne und ID reichen, der Rest
-  ist Gedächtnisstütze
+- **Ein neues Rezept fehlt in der Tabelle.** Eine Zeile in der Datei anhängen, Sterne und ID
+  reichen, der Rest ist Gedächtnisstütze

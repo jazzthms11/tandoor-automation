@@ -49,7 +49,7 @@ HEADER = """# Bonname zu Tandoor-Lebensmittel. Von Hand kommen Laden und ID.
 # Die Klasse steht hier nicht. Zugeordnet wird auch, was nie in den Bestand kommt; was davon
 # gefuehrt wird, entscheidet klassen.tsv. Das `-` heisst deshalb nie "fuehrt keinen Bestand".
 #
-# Geschrieben wird die Datei von `bon map`.
+# Geschrieben wird die Datei von `bon map`, eingelesen mit `plan data import zuordnung`.
 # Spalten: id, laden, bonname, lebensmittel, anzahl. Gelesen werden die ersten drei.
 """
 

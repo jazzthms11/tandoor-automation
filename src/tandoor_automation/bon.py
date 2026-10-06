@@ -5,32 +5,24 @@ import json
 import re
 import subprocess
 from collections import Counter
-from collections.abc import Iterable
 from datetime import date
 from pathlib import Path
 from typing import Any
 
-from tandoor_automation.classes import (
-    CLASSES_FILE,
-    EXCEPTIONS_FILE,
-    parse_categories,
-    parse_exceptions,
-    stock_foods,
-)
+from tandoor_automation import store, tables
+from tandoor_automation.classes import stock_foods
 from tandoor_automation.config import Settings
 from tandoor_automation.lidl import (
-    TOKEN_FILE,
     LidlAuthError,
     LidlClient,
     login_url,
     redeem,
+    token_file,
 )
 from tandoor_automation.mapping import (
-    MAPPING_FILE,
     Counts,
     Decisions,
     merge,
-    parse_mapping,
     problems,
     render,
     resolve,
@@ -38,7 +30,7 @@ from tandoor_automation.mapping import (
 )
 from tandoor_automation.models import InventoryLocation
 from tandoor_automation.receipts import Receipt, parse_kaufland, parse_lidl
-from tandoor_automation.shopping import INTERVALS_FILE, confirmed_until, parse_intervals
+from tandoor_automation.shopping import confirmed_until
 from tandoor_automation.stock import (
     Addition,
     additions,
@@ -50,16 +42,24 @@ from tandoor_automation.stock import (
 )
 from tandoor_automation.tandoor import TandoorClient
 
-LIDL_DIR = Path("bons/lidl")
-KAUFLAND_DIR = Path("bons/kaufland")
-"""Kaufland gibt nichts her, was sich abholen ließe. Sein Beleg kommt als PDF aus der App und
-wird hier eingeworfen; abgelegt wird die Datei unverändert, gelesen bei jedem Lauf neu."""
 PDFTOTEXT = "pdftotext"
-STATE_FILE = Path("bons/.importiert")
-"""Welche Bons im Bestand angekommen sind. Anders als beim Holen trägt die Ablage das nicht:
-ein gebuchter Bon sieht aus wie ein ungebuchter, und ein zweiter Lauf würde die Mengen
-verdoppeln. Gemerkt werden auch die übersprungenen, sonst holt der nächste Lauf sie nach."""
 UNKNOWN_DATE = "ohne-datum"
+MAPPING_FILE = Path(tables.TABLES["zuordnung"].file)
+"""Der Export der Zuordnung im Arbeitsordner, dort wird von Hand entschieden."""
+
+
+def _lidl_dir() -> Path:
+    """Die Rohbons aus Lidl Plus, je Bon die Antwort der API."""
+    return store.bons_dir() / "lidl"
+
+
+def _kaufland_dir() -> Path:
+    """Kaufland gibt nichts her, was sich abholen ließe.
+
+    Sein Beleg kommt als PDF aus der App und wird hier eingeworfen; abgelegt wird die Datei
+    unverändert, gelesen bei jedem Lauf neu.
+    """
+    return store.bons_dir() / "kaufland"
 
 
 def _known_ids() -> set[str]:
@@ -71,13 +71,13 @@ def _known_ids() -> set[str]:
     Returns:
         Die IDs aller Bons, die schon vorliegen.
     """
-    return {path.stem.split("_", 1)[1] for path in LIDL_DIR.glob("*_*.json")}
+    return {path.stem.split("_", 1)[1] for path in _lidl_dir().glob("*_*.json")}
 
 
 def _target(summary: dict[str, Any]) -> Path:
     """Baut den Ablagepfad: das Datum sortiert den Ordner, die ID erkennt den Bon wieder."""
     day = str(summary.get("date") or "")[:10] or UNKNOWN_DATE
-    return LIDL_DIR / f"{day}_{summary['id']}.json"
+    return _lidl_dir() / f"{day}_{summary['id']}.json"
 
 
 def _describe(summary: dict[str, Any]) -> str:
@@ -99,7 +99,7 @@ def _run_login() -> None:
     answer = input("Adresse oder Code nach der Anmeldung einfügen: ").strip()
     match = re.search(r"code=([0-9A-Za-z]+)", answer)
     redeem(match.group(1) if match else answer, verifier)
-    print(f"Zugang steht, abgelegt in {TOKEN_FILE}.")
+    print(f"Zugang steht, abgelegt in {token_file()}.")
 
 
 def _run_fetch(dry_run: bool) -> None:
@@ -112,7 +112,7 @@ def _run_fetch(dry_run: bool) -> None:
         dry_run: Nur zeigen, was geholt würde.
     """
     known = _known_ids()
-    LIDL_DIR.mkdir(parents=True, exist_ok=True)
+    _lidl_dir().mkdir(parents=True, exist_ok=True)
     fetched = 0
     with LidlClient() as lidl:
         for summary in lidl.tickets():
@@ -142,8 +142,10 @@ def _receipt_names() -> Counts:
 def _run_map(catalogue: bool) -> None:
     """Bringt die Zuordnung auf den Stand der Bons und prüft sie gegen Tandoor.
 
-    Geschrieben wird die Datei immer, auch wenn Mängel gefunden wurden: die Mängel stecken in der
-    ersten Spalte, und die bleibt beim Schreiben unangetastet.
+    Neue Bonnamen kommen unentschieden in die Datenbank, zum Entscheiden geht die ganze
+    Zuordnung als Datei in den Arbeitsordner. Geschrieben wird sie auch bei Mängeln: die stecken
+    in der ersten Spalte, und die ist von Hand zu berichtigen. Eine Datei mit Entscheidungen,
+    die noch nicht eingelesen sind, bleibt dagegen liegen.
 
     Args:
         catalogue: Statt der Zuordnung die Lebensmittel aus Tandoor ausgeben.
@@ -154,9 +156,14 @@ def _run_map(catalogue: bool) -> None:
         for food in foods:
             print(f"{food.id}\t{food.name}\t{food.category}")
         return
-    known = parse_mapping(MAPPING_FILE.read_text(encoding="utf-8")) if MAPPING_FILE.exists() else []
+    table = tables.TABLES["zuordnung"]
+    if MAPPING_FILE.exists() and tables.unimported(table, MAPPING_FILE.read_text("utf-8")):
+        print(f"{MAPPING_FILE} trägt Entscheidungen, die noch nicht eingelesen sind:")
+        print("erst plan data import zuordnung, oder die Datei löschen")
+        raise SystemExit(1)
     counts = _receipt_names()
-    entries = merge(known, counts)
+    entries = merge(store.mapping(), counts)
+    store.add_mapping(entries)
     names = {food.id: food.name for food in foods}
     MAPPING_FILE.write_text(render(entries, names), encoding="utf-8")
     open_names = [entry.receipt_name for entry in entries if not entry.decided]
@@ -170,6 +177,8 @@ def _run_map(catalogue: bool) -> None:
     found = problems(entries, names)
     for problem in found:
         print(problem)
+    if open_names or found:
+        print(f"In {MAPPING_FILE} entscheiden, dann: plan data import zuordnung")
     if found:
         raise SystemExit(1)
 
@@ -177,9 +186,9 @@ def _run_map(catalogue: bool) -> None:
 def _receipts() -> list[Receipt]:
     """Liest alle abgelegten Bons beider Quellen, den ältesten zuerst."""
     parsed = [
-        parse_lidl(json.loads(p.read_text(encoding="utf-8"))) for p in LIDL_DIR.glob("*.json")
+        parse_lidl(json.loads(p.read_text(encoding="utf-8"))) for p in _lidl_dir().glob("*.json")
     ]
-    parsed += [parse_kaufland(_pdf_text(p)) for p in KAUFLAND_DIR.glob("*.pdf")]
+    parsed += [parse_kaufland(_pdf_text(p)) for p in _kaufland_dir().glob("*.pdf")]
     return sorted(parsed, key=lambda receipt: receipt.purchased_on)
 
 
@@ -221,7 +230,7 @@ def _run_import(paths: list[Path], dry_run: bool) -> None:
         paths: Pfade der PDF-Belege.
         dry_run: Nur zeigen, was abgelegt würde.
     """
-    KAUFLAND_DIR.mkdir(parents=True, exist_ok=True)
+    _kaufland_dir().mkdir(parents=True, exist_ok=True)
     added, failed = 0, 0
     for path in paths:
         try:
@@ -237,7 +246,7 @@ def _run_import(paths: list[Path], dry_run: bool) -> None:
 def _import_pdf(path: Path, dry_run: bool) -> int:
     """Legt einen Beleg ab und sagt über den Rückgabewert, ob er neu war."""
     receipt = parse_kaufland(_pdf_text(path))
-    target = KAUFLAND_DIR / f"{receipt.receipt_id}.pdf"
+    target = _kaufland_dir() / f"{receipt.receipt_id}.pdf"
     line = (
         f"{receipt.purchased_on}  {receipt.store}  {len(receipt.items)} Positionen  {target.name}"
     )
@@ -252,20 +261,6 @@ def _import_pdf(path: Path, dry_run: bool) -> int:
     return 1
 
 
-def _imported() -> set[str]:
-    """Liest, welche Bons schon abgehandelt sind."""
-    if not STATE_FILE.exists():
-        return set()
-    return {line.strip() for line in STATE_FILE.read_text(encoding="utf-8").splitlines() if line}
-
-
-def _remember(receipts: Iterable[Receipt]) -> None:
-    """Hält fest, dass diese Bons abgehandelt sind."""
-    with STATE_FILE.open("a", encoding="utf-8") as handle:
-        for receipt in receipts:
-            handle.write(f"{receipt.receipt_id}\n")
-
-
 def _decided(receipts: list[Receipt]) -> Decisions:
     """Legt für jede Position der Bons die geltende Entscheidung fest.
 
@@ -275,7 +270,7 @@ def _decided(receipts: list[Receipt]) -> Decisions:
     Returns:
         Lebensmittel-ID je Laden und Bonname, ohne die noch nicht entschiedenen.
     """
-    entries = parse_mapping(MAPPING_FILE.read_text(encoding="utf-8"))
+    entries = store.mapping()
     keys = {(receipt.source, item.name) for receipt in receipts for item in receipt.items}
     return resolve(entries, keys)
 
@@ -283,14 +278,18 @@ def _decided(receipts: list[Receipt]) -> Decisions:
 def _run_apply(since: date | None, dry_run: bool) -> None:
     """Bucht die Zugänge aus allen Bons, die noch nicht im Bestand angekommen sind.
 
+    Welche Bons angekommen sind, trägt die Ablage nicht: ein gebuchter Bon sieht aus wie ein
+    ungebuchter, und ein zweiter Lauf würde die Mengen verdoppeln. Gemerkt werden deshalb in der
+    Datenbank auch die übersprungenen, sonst holte der nächste Lauf sie nach.
+
     Args:
         since: Nur Bons ab diesem Tag buchen, ältere gelten als abgehandelt.
         dry_run: Nur zeigen, was gebucht würde.
     """
-    if not STATE_FILE.exists() and since is None:
+    known = store.booked()
+    if not known and since is None:
         print("Beim ersten Lauf braucht es --seit DATUM, sonst laufen alle Bons in den Bestand.")
         raise SystemExit(1)
-    known = _imported()
     fresh = [receipt for receipt in _receipts() if receipt.receipt_id not in known]
     skipped = {r.receipt_id for r in fresh if since is not None and r.purchased_on < since}
     todo = [r for r in fresh if r.receipt_id not in skipped]
@@ -299,11 +298,11 @@ def _run_apply(since: date | None, dry_run: bool) -> None:
     for name in open_names:
         print(f"ohne Zuordnung: {name}")
     if open_names:
-        print(f"Erst {MAPPING_FILE} ergänzen: bon map")
+        print("Erst zuordnen: bon map")
         raise SystemExit(1)
     _book(todo, mapping, dry_run)
     if not dry_run:
-        _remember(fresh)
+        store.remember({receipt.receipt_id for receipt in fresh})
     print(f"{len(todo)} Bons gebucht, {len(skipped)} übersprungen, {len(known)} lagen schon vor")
 
 
@@ -318,17 +317,13 @@ def _book(receipts: list[Receipt], mapping: Decisions, dry_run: bool) -> None:
     with TandoorClient(Settings()) as tandoor:
         catalogue = tandoor.foods()
         _check_mapping(receipts, mapping, {food.id for food in catalogue})
-        foods = stock_foods(
-            catalogue,
-            parse_categories(CLASSES_FILE.read_text(encoding="utf-8")),
-            parse_exceptions(EXCEPTIONS_FILE.read_text(encoding="utf-8")),
-        )
+        foods = stock_foods(catalogue, store.categories(), store.exceptions())
         todo = additions(receipts, mapping, foods)
         units = tandoor.units()
         locations = {place.name: place for place in tandoor.inventory_locations()}
         _check(todo, units, locations)
         inventory = tandoor.inventory()
-        intervals = parse_intervals(INTERVALS_FILE.read_text(encoding="utf-8"))
+        intervals = store.intervals()
         for addition in todo:
             entry_id = twin(addition, inventory, units)
             trusted_until = confirmed_until(date.today(), addition.food_id, intervals)
@@ -358,7 +353,7 @@ def _check_mapping(receipts: list[Receipt], mapping: Decisions, ids: set[int]) -
     for name, food_id in gone:
         print(f"{name}: Lebensmittel {food_id} gibt es nicht mehr")
     if gone:
-        print(f"Erst {MAPPING_FILE} berichtigen: bon map")
+        print("Erst die Zuordnung berichtigen: bon map")
         raise SystemExit(1)
 
 
@@ -384,7 +379,7 @@ def main() -> None:
     imports = commands.add_parser("import-pdf", help="Kaufland-Belege als PDF einlesen")
     imports.add_argument("dateien", type=Path, nargs="+", help="Pfade der PDF-Belege")
     imports.add_argument("--dry-run", action="store_true", help="Nur zeigen, was abgelegt würde")
-    mapping = commands.add_parser("map", help=f"Bonnamen in {MAPPING_FILE} zuordnen")
+    mapping = commands.add_parser("map", help="Neue Bonnamen aufnehmen und zum Zuordnen ausgeben")
     mapping.add_argument(
         "--katalog",
         action="store_true",

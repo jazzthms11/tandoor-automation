@@ -13,9 +13,10 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
+from tandoor_automation import store
 from tandoor_automation.config import Settings
 from tandoor_automation.models import InventoryLocation
-from tandoor_automation.shopping import INTERVALS_FILE, confirmed_until, parse_intervals
+from tandoor_automation.shopping import confirmed_until
 from tandoor_automation.stock import Addition, describe, payload, twin
 from tandoor_automation.tandoor import TandoorClient
 
@@ -113,7 +114,7 @@ def run(dry_run: bool) -> None:
         dry_run: Nur zeigen, was geschrieben würde.
     """
     additions = parse_stock(STOCK_FILE.read_text(encoding="utf-8"))
-    intervals = parse_intervals(INTERVALS_FILE.read_text(encoding="utf-8"))
+    intervals = store.intervals()
     today = date.today()
     written = 0
     with TandoorClient(Settings()) as tandoor:

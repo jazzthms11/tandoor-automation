@@ -9,3 +9,12 @@ cache/
 vorschlag/
 bons/
 .lidl-token
+data/
+
+# Exporte der eigenen Tabellen, die Quelle ist die Datenbank
+/bewertung.tsv
+/klassen.tsv
+/ausnahmen.tsv
+/intervalle.tsv
+/zuordnung.tsv
+/importiert.txt

@@ -6,10 +6,19 @@ bons/
 bundle/
 vorschlag/
 cache/
+data/
+*.tsv
+importiert.txt
 
 .git/
 .venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+data/
+*.tsv
+importiert.txt
 .ruff_cache/
+data/
+*.tsv
+importiert.txt

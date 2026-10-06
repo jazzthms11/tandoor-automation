@@ -8,11 +8,11 @@ import argparse
 from datetime import date
 from pathlib import Path
 
+from tandoor_automation import store, tables
 from tandoor_automation.apply import Slot, describe_meal
 from tandoor_automation.bundle import PlanBundle, build_bundle, next_week, parse_week
 from tandoor_automation.config import Settings
 from tandoor_automation.proposal import MARKS, Proposal, validate_proposal
-from tandoor_automation.rating import parse_ratings
 from tandoor_automation.shopping import Choice, Need, Question
 from tandoor_automation.shopping import describe as describe_question
 from tandoor_automation.tandoor import TandoorClient
@@ -28,7 +28,6 @@ from tandoor_automation.workflow import (
 )
 
 BUNDLE_DIR = Path("bundle")
-RATINGS_FILE = Path("bewertung.tsv")
 
 
 def write_bundle(week: str | None) -> Path:
@@ -177,18 +176,18 @@ def _run_clear(week: str | None, ids: list[int], dry_run: bool) -> None:
 
 
 def _run_rate(dry_run: bool) -> None:
-    """Gleicht die Grundbewertung aus `bewertung.tsv` mit Tandoors Kochprotokoll ab.
+    """Gleicht die Grundbewertung aus der Datenbank mit Tandoors Kochprotokoll ab.
 
-    Die Datei ist die Quelle: eine Note, die dort auf 0 steht, wird in Tandoor gelöscht.
+    Die Tabelle ist die Quelle: eine Note, die dort auf 0 steht, wird in Tandoor gelöscht.
 
     Args:
         dry_run: Nur zeigen, was geschrieben würde.
     """
-    ratings = parse_ratings(RATINGS_FILE.read_text(encoding="utf-8"))
+    ratings = store.ratings()
     with TandoorClient(Settings()) as tandoor:
         synced = sync_ratings(tandoor, ratings, dry_run)
     if synced.unknown:
-        print(f"{RATINGS_FILE}: unbekannte Rezepte {synced.unknown}")
+        print(f"bewertung: unbekannte Rezepte {synced.unknown}")
         raise SystemExit(1)
     for change in synced.todo:
         verb = "löschen" if not change.stars else ("ändern" if change.log_id else "anlegen")
@@ -271,6 +270,102 @@ def _read_choice(question: Question) -> Choice | None:
         print(f"  {0} bis {len(question.choices) - 1}, oder leer zum Überspringen")
 
 
+def _chosen(names: list[str]) -> list[tables.Table]:
+    """Die genannten Tabellen, ohne Angabe alle."""
+    return [tables.TABLES[name] for name in names or tables.TABLES]
+
+
+def _run_export(names: list[str], folder: Path, force: bool) -> None:
+    """Schreibt Tabellen als Datei in einen Ordner, zum Durchsehen und Ändern.
+
+    Eine vorhandene Datei, die noch nicht Eingelesenes trägt, bleibt liegen, sonst wäre die
+    Änderung von Hand weg.
+
+    Args:
+        names: Die Tabellen, ohne Angabe alle.
+        folder: Wohin die Dateien kommen.
+        force: Auch eine Datei mit nicht Eingelesenem überschreiben.
+    """
+    held = False
+    for table in _chosen(names):
+        if table.render is None:
+            print(f"{table.name}: über bon map")
+            continue
+        target = folder / table.file
+        if target.exists() and not force:
+            pending = tables.unimported(table, target.read_text(encoding="utf-8"))
+            if pending:
+                print(f"{target}: {pending} Zeilen noch nicht eingelesen, bleibt liegen")
+                held = True
+                continue
+        target.write_text(table.render(tables.rows(table)), encoding="utf-8")
+        print(target)
+    if held:
+        print("Erst plan data import, oder mit --force überschreiben")
+        raise SystemExit(1)
+
+
+def _run_import(names: list[str], folder: Path, dry_run: bool) -> None:
+    """Liest Dateien zurück in ihre Tabellen, jede in einer eigenen Transaktion.
+
+    Ohne Angabe von Tabellen werden die genommen, deren Datei im Ordner liegt.
+
+    Args:
+        names: Die Tabellen, ohne Angabe alle vorhandenen.
+        folder: Wo die Dateien liegen.
+        dry_run: Nur zählen, was sich änderte.
+    """
+    failed = False
+    for table in _chosen(names):
+        source = folder / table.file
+        if not source.exists():
+            if names:
+                print(f"{source}: fehlt")
+                failed = True
+            continue
+        try:
+            diff = tables.load(table, source.read_text(encoding="utf-8"), dry_run)
+        except ValueError as problem:
+            print(f"{source}: {problem}")
+            failed = True
+            continue
+        verb = "würde ändern" if dry_run else "eingelesen"
+        print(
+            f"{table.name} {verb}: {diff.added} neu, {diff.changed} geändert, "
+            f"{diff.removed} entfernt"
+        )
+    if failed:
+        raise SystemExit(1)
+
+
+def _add_data(commands: argparse._SubParsersAction) -> None:
+    """Hängt `plan data` mit Export, Import und Sicherung an."""
+    data = commands.add_parser("data", help="Eigene Tabellen ausgeben, einlesen, sichern")
+    steps = data.add_subparsers(dest="step", required=True)
+    names = {"nargs": "*", "choices": list(tables.TABLES), "metavar": "tabelle"}
+    folder = {"type": Path, "default": Path(), "help": "Ordner der Dateien, sonst der aktuelle"}
+    export = steps.add_parser("export", help="Tabellen als Datei schreiben, ohne Angabe alle")
+    export.add_argument("tabellen", **names)
+    export.add_argument("--ordner", **folder)
+    export.add_argument("--force", action="store_true", help="Auch Uneingelesenes überschreiben")
+    load = steps.add_parser("import", help="Dateien zurück in die Tabellen lesen")
+    load.add_argument("tabellen", **names)
+    load.add_argument("--ordner", **folder)
+    load.add_argument("--dry-run", action="store_true", help="Nur zählen, was sich änderte")
+    save = steps.add_parser("backup", help="Kopie der Datenbank, sicher auch im Betrieb")
+    save.add_argument("ziel", type=Path, nargs="?", help="Pfad der Kopie, sonst im Datenordner")
+
+
+def _run_data(args: argparse.Namespace) -> None:
+    """Führt den gewählten Schritt von `plan data` aus."""
+    if args.step == "export":
+        _run_export(args.tabellen, args.ordner, args.force)
+    elif args.step == "import":
+        _run_import(args.tabellen, args.ordner, args.dry_run)
+    else:
+        print(store.backup(args.ziel))
+
+
 def main() -> None:
     """Liest die Kommandozeile und führt den gewählten Befehl aus."""
     parser = argparse.ArgumentParser(prog="plan", description="Wochenplaner für Tandoor")
@@ -285,7 +380,7 @@ def main() -> None:
     apply_ = commands.add_parser("apply", help="Vorschlag prüfen und nach Tandoor schreiben")
     apply_.add_argument("datei", type=Path, help="Pfad der Vorschlagsdatei")
     apply_.add_argument("--dry-run", action="store_true", help="Nur zeigen, was geschrieben würde")
-    rate = commands.add_parser("rate", help=f"Grundbewertung aus {RATINGS_FILE} nach Tandoor")
+    rate = commands.add_parser("rate", help="Grundbewertung aus der Datenbank nach Tandoor")
     rate.add_argument("--dry-run", action="store_true", help="Nur zeigen, was geschrieben würde")
     shop = commands.add_parser("shop", help="Bestand abfragen und die Einkaufsliste schreiben")
     shop.add_argument(
@@ -307,8 +402,11 @@ def main() -> None:
         help="Nur diesen Eintrag löschen, mehrfach angebbar. Ohne Angabe die ganze Woche.",
     )
     clear.add_argument("--dry-run", action="store_true", help="Nur zeigen, was gelöscht würde")
+    _add_data(commands)
     args = parser.parse_args()
-    if args.command == "check":
+    if args.command == "data":
+        _run_data(args)
+    elif args.command == "check":
         _run_check(args.datei)
     elif args.command == "apply":
         _run_apply(args.datei, args.dry_run)

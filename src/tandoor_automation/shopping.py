@@ -16,14 +16,12 @@ Grenze träfe immer nur eines von beidem.
 from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal
-from pathlib import Path
 
 from tandoor_automation.classes import StockFood
 from tandoor_automation.models import InventoryEntry, PlannedMeal, RecipeDetail
 
-INTERVALS_FILE = Path("intervalle.tsv")
 FALLBACK_DAYS = 14
-"""So lange trägt eine Antwort, solange `intervalle.tsv` das Lebensmittel nicht kennt.
+"""So lange trägt eine Antwort, solange die Tabelle `intervalle` das Lebensmittel nicht kennt.
 
 Die Dauer hängt am Lebensmittel und nicht an seiner Kategorie: allein der Kühlschrank spannt
 von einer Woche beim Quark bis zu einem halben Jahr beim Proteinpulver. Die Kaufabstände aus
@@ -246,7 +244,7 @@ def confirmed_until(today: date, food_id: int, intervals: dict[int, int]) -> dat
     Args:
         today: Der Tag der Antwort.
         food_id: Das bestätigte Lebensmittel.
-        intervals: Tage je Lebensmittel, aus `intervalle.tsv`.
+        intervals: Tage je Lebensmittel, aus der Tabelle `intervalle`.
 
     Returns:
         Der Tag, ab dem wieder gefragt wird.
