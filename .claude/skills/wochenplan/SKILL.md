@@ -61,8 +61,8 @@ auch dann. Ohne `--dry-run` löscht `plan apply` die Vorschlagsdatei nach dem Sc
 danach die einzige Wahrheit.
 
 Was schon in Tandoor steht, ändert `plan apply` nicht. Soll ein bereits geschriebener Eintrag weg
-oder anders aussehen, gehört das in Tandoors Oberfläche oder auf die Seite *Wochenplan* der Oberfläche (`plan clear`); sag Leo das, statt es
-zu umgehen.
+oder anders aussehen, gehört das in Tandoors Oberfläche oder auf die Seite *Wochenplan* der
+Oberfläche (`plan clear`); sag Leo das, statt es zu umgehen.
 
 ## Wenn Leo eine Bewertung ändern will
 

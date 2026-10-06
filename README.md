@@ -65,6 +65,7 @@ nicht, abgesichert ist sie über den Netzweg. Einen anderen Port setzt `WEB_PORT
 |---|---|---|
 | Wochenplan | `plan clear` | Einträge einer Woche, eigene zum Auswählen und Zurücknehmen |
 | Einkauf | `plan shop` | Bestandsfragen nach Ort als Knöpfe, Vorschau, dann buchen und Liste schreiben |
+| Bons | `bon fetch`, `import-pdf`, `map`, `apply` | Lidl abholen, Kaufland-PDF hochladen, offene Bonnamen per Suche zuordnen, buchen |
 | Bewertung | `plan rate` | alle Rezepte mit Sternen, ein Klick schreibt sofort nach Tandoor |
 Nach `git pull` holen `docker compose build` und `docker compose up -d` die neue Fassung.
 
@@ -83,8 +84,8 @@ an. Was nur Tandoor braucht, also `plan bundle`, `check`, `apply` und `clear`, g
 ### Eigene Tabellen
 
 Was Tandoor nicht kennt, steht in SQLite: Grundbewertung, Klassen, Ausnahmen, Intervalle, die
-Zuordnung der Bonnamen und welche Bons gebucht sind. Die Bewertung hat eine Seite in der
-Oberfläche, für den Rest ist die TSV-Datei der Weg zum Ändern, bis auch er eine hat:
+Zuordnung der Bonnamen und welche Bons gebucht sind. Bewertung und offene Bonnamen haben eine
+Seite in der Oberfläche, für den Rest ist die TSV-Datei der Weg zum Ändern, bis auch er eine hat:
 
 ```bash
 plan data export klassen          # schreibt klassen.tsv in den aktuellen Ordner
@@ -170,6 +171,10 @@ uv run bon fetch             # fehlende Bons holen, unverändert nach bons/lidl/
 Der Ordner ist zugleich der Stand: was dort liegt, wird nicht noch einmal geholt. Abgelegt wird
 die Antwort der API unverändert, denn was ein Bon für den Bestand hergibt, entscheidet erst die
 Zuordnung, und ein Fehler dort soll keinen neuen Abruf kosten.
+
+In der Oberfläche liegt der ganze Weg auf der Seite *Bons*: abholen, Kaufland-PDF hochladen,
+offene Bonnamen zuordnen und buchen. Die Abläufe stehen in `intake.py`, die CLI `bon` und die
+Seite rufen dieselben Funktionen auf. Nur `bon login` bleibt CLI.
 
 ### Kaufland
 

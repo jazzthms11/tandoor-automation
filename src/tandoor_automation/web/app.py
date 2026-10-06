@@ -14,7 +14,7 @@ from fastapi.responses import PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from tandoor_automation import store
-from tandoor_automation.web import bewertung, einkauf, plan
+from tandoor_automation.web import bewertung, bons, einkauf, plan
 from tandoor_automation.web.common import HERE, PAGES, templates
 
 
@@ -27,7 +27,7 @@ async def _lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="tandoor-automation", lifespan=_lifespan, docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
-for module in (plan, einkauf, bewertung):
+for module in (plan, einkauf, bons, bewertung):
     app.include_router(module.router)
 
 

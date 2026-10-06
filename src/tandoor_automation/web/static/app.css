@@ -184,3 +184,81 @@ nav a[aria-current="page"] {
   font-size: 1rem;
   margin: 1rem 0 0.25rem;
 }
+
+.zuordnung {
+  padding: 0;
+}
+
+.zuordnung li {
+  list-style: none;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--pico-muted-border-color);
+}
+
+.zuordnung li > small {
+  display: block;
+  color: var(--pico-muted-color);
+}
+
+.treffer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+}
+
+.treffer button.klein {
+  margin: 0;
+}
+
+.treffer button small {
+  color: var(--pico-muted-color);
+}
+
+.suche {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.suche input {
+  margin: 0;
+}
+
+.suche button.klein {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.entschieden small {
+  margin-left: 0.5rem;
+  color: var(--pico-ins-color);
+}
+
+.meldung {
+  font-family: var(--pico-font-family-monospace);
+  font-size: 0.85rem;
+}
+
+/* Vier Seiten passen am Handy nicht neben den Namen, die Navigation bricht dann um. */
+header nav {
+  flex-wrap: wrap;
+}
+
+header nav ul {
+  flex-wrap: wrap;
+}
+
+header nav li {
+  padding-block: 0.4rem;
+}
+
+@media (max-width: 576px) {
+  header nav > ul:first-child {
+    display: none;
+  }
+
+  header nav li {
+    padding-inline: 0.4rem;
+  }
+}

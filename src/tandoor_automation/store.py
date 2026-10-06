@@ -293,6 +293,27 @@ def add_mapping(entries: list[Entry]) -> int:
     return len(fresh)
 
 
+def decide(key: tuple[str, str], food_id: int | None) -> None:
+    """Entscheidet einen Bonnamen: zugeordnet zu einem Lebensmittel, oder ohne ID verworfen.
+
+    Args:
+        key: Laden und Bonname, wie in der Zuordnung.
+        food_id: Das Lebensmittel in Tandoor. Ohne Angabe wird der Name verworfen.
+
+    Raises:
+        KeyError: Wenn die Zuordnung den Namen nicht kennt.
+    """
+    with session() as db:
+        row = db.get(ReceiptMapping, key)
+        if row is None:
+            raise KeyError(key)
+        row.food_id = food_id
+        row.discarded = food_id is None
+        row.changed_at = datetime.now().astimezone()
+        db.add(row)
+        db.commit()
+
+
 def booked() -> set[str]:
     """Die IDs der Bons, die schon abgehandelt sind."""
     with session() as db:

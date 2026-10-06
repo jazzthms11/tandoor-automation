@@ -1,8 +1,10 @@
 """Was alle Seiten teilen: Vorlagen, Navigation, der Zugang zu Tandoor und die Wochen."""
 
-from collections.abc import Iterator
+import time
+from collections.abc import Callable, Iterator
 from datetime import date, timedelta
 from importlib.resources import files
+from threading import Lock
 from typing import Annotated
 
 from fastapi import Depends, Request
@@ -13,7 +15,12 @@ from tandoor_automation.config import Settings
 from tandoor_automation.tandoor import TandoorClient
 
 HERE = files("tandoor_automation") / "web"
-PAGES = [("Wochenplan", "/plan"), ("Einkauf", "/einkauf"), ("Bewertung", "/bewertung")]
+PAGES = [
+    ("Wochenplan", "/plan"),
+    ("Einkauf", "/einkauf"),
+    ("Bons", "/bons"),
+    ("Bewertung", "/bewertung"),
+]
 """Die Navigation, eine Seite je Eintrag, die erste ist die Startseite."""
 WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 
@@ -41,6 +48,32 @@ def tandoor() -> Iterator[TandoorClient]:
 
 
 Tandoor = Annotated[TandoorClient, Depends(tandoor)]
+
+
+class Cached[T]:
+    """Ein Abruf aus Tandoor, der einige Minuten gilt.
+
+    Rezepte und Lebensmittel kommen in Seiten zu hundert und tragen mehr, als eine Seite braucht.
+    Sie bei jedem Tippen ins Suchfeld neu zu holen, machte die Oberfläche zäh, und neue Einträge
+    entstehen selten. Wer gerade einen angelegt hat, lädt über `fresh` neu.
+    """
+
+    def __init__(self, load: Callable[[TandoorClient], T], seconds: int = 600) -> None:
+        """Merkt sich, wie geholt wird und wie lange das Geholte gilt."""
+        self._load = load
+        self._seconds = seconds
+        self._lock = Lock()
+        self._at: float | None = None
+        self._value: T | None = None
+
+    def get(self, tandoor: TandoorClient, fresh: bool = False) -> T:
+        """Gibt den gemerkten Stand, oder holt ihn neu, wenn er zu alt ist oder fehlt."""
+        with self._lock:
+            stale = self._at is None or time.monotonic() - self._at > self._seconds
+            if fresh or stale or self._value is None:
+                self._value = self._load(tandoor)
+                self._at = time.monotonic()
+            return self._value
 
 
 def partial(request: Request) -> bool:

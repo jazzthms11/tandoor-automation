@@ -1,0 +1,6 @@
+{% for food in foods %}
+<button class="outline klein" hx-post="/bons/zuordnen" hx-include="closest li" hx-vals='{"food_id": {{ food.id }}}'
+        hx-target="closest li" hx-swap="outerHTML">{{ food.name }}{% if food.category %} <small>{{ food.category }}</small>{% endif %}</button>
+{% else %}
+{% if searched %}<small>Nichts gefunden.</small>{% endif %}
+{% endfor %}

@@ -1,0 +1,33 @@
+{% if problems %}
+<article>
+  <header><strong>Mängel in der Zuordnung</strong></header>
+  <ul>{% for problem in problems %}<li>{{ problem }}</li>{% endfor %}</ul>
+  <p><small>Berichtigen über die Datei: <code>bon map</code>, ändern, <code>plan data import zuordnung</code>.</small></p>
+</article>
+{% endif %}
+<p><small>{{ undecided|length }} offen von {{ total }} Bonnamen{% if added %}, {{ added }} neu dazugekommen{% endif %}.
+  <a href="#" hx-get="/bons/zuordnung?neu=1" hx-target="#zuordnung">Lebensmittel neu laden</a></small></p>
+{% if undecided %}
+<ul class="zuordnung">
+  {% for entry, suggestions in undecided %}
+  <li>
+    <input type="hidden" name="laden" value="{{ entry.store }}">
+    <input type="hidden" name="name" value="{{ entry.receipt_name }}">
+    <strong>{{ entry.receipt_name }}</strong>
+    <small>{{ entry.count }}× gekauft{% if entry.store %}, nur {{ entry.store }}{% endif %}</small>
+    <div class="treffer">
+      {% set foods = suggestions %}{% include "bons_treffer.html" %}
+    </div>
+    <div class="suche">
+      <input type="search" name="q" placeholder="Lebensmittel suchen" aria-label="Lebensmittel suchen für {{ entry.receipt_name }}"
+             hx-get="/bons/lebensmittel" hx-trigger="input changed delay:250ms, search" hx-target="previous .treffer"
+             hx-include="this">
+      <button class="secondary outline klein" hx-post="/bons/zuordnen" hx-include="closest li" hx-target="closest li" hx-swap="outerHTML"
+              title="Kommt nie in den Bestand, etwa Pfand oder Tüte">Verwerfen</button>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>Alles zugeordnet.</p>
+{% endif %}

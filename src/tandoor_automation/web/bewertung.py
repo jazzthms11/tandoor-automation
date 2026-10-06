@@ -1,9 +1,7 @@
 """Die Seite Bewertung: alle Rezepte mit Sternen, ein Klick schreibt sofort nach Tandoor."""
 
-import time
 from collections import Counter
 from dataclasses import dataclass
-from threading import Lock
 from typing import Annotated
 
 import httpx
@@ -13,12 +11,9 @@ from sqlmodel import col, select
 
 from tandoor_automation import store
 from tandoor_automation.rating import MAX_STARS
-from tandoor_automation.tandoor import TandoorClient
-from tandoor_automation.web.common import Tandoor, partial, templates
+from tandoor_automation.web.common import Cached, Tandoor, partial, templates
 from tandoor_automation.workflow import rate_recipe, sync_ratings
 
-NAMES_SECONDS = 600
-"""So lange gilt die Liste der Rezeptnamen, bevor sie neu aus Tandoor geholt wird."""
 MEANING = {
     5: "geht quasi immer",
     4: "sehr gut, aber nicht jede Woche",
@@ -31,28 +26,7 @@ MEANING = {
 router = APIRouter()
 
 
-class _Names:
-    """Die Rezeptnamen aus Tandoor, einige Minuten zwischengespeichert.
-
-    Die Rezeptliste kommt in Seiten zu hundert und trägt an jedem Rezept mehr, als hier gebraucht
-    wird. Sie bei jedem Tippen ins Suchfeld neu zu holen, machte die Seite zäh, und neue Rezepte
-    entstehen selten. Wer eins gerade angelegt hat, lädt die Liste über den Link neu.
-    """
-
-    def __init__(self) -> None:
-        self._lock = Lock()
-        self._at: float | None = None
-        self._names: dict[int, str] = {}
-
-    def get(self, tandoor: TandoorClient, fresh: bool = False) -> dict[int, str]:
-        with self._lock:
-            if fresh or self._at is None or time.monotonic() - self._at > NAMES_SECONDS:
-                self._names = tandoor.recipe_names()
-                self._at = time.monotonic()
-            return self._names
-
-
-_names = _Names()
+_names = Cached(lambda tandoor: tandoor.recipe_names())
 
 
 @dataclass(frozen=True)
