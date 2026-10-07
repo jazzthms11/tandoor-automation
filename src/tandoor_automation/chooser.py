@@ -162,7 +162,7 @@ class Gemini:
                 _check(response)
                 for line in response.iter_lines():
                     if line.startswith("data:"):
-                        stream.take(json.loads(line.removeprefix("data:")))
+                        stream.take(line.removeprefix("data:"))
                     if stream.elapsed() > DEADLINE_SECONDS:
                         raise ChooserError(
                             f"Gemini ist nach {DEADLINE_SECONDS // 60} Minuten nicht fertig, "
@@ -176,7 +176,10 @@ class Gemini:
             raise ChooserError(f"Gemini nicht erreichbar: {error}") from error
         log.info("%s fertig, %s", model, stream.progress())
         if not stream.text:
-            raise ChooserError(f"Gemini gibt keinen Text zurück, Grund: {stream.reason}")
+            raise ChooserError(
+                f"Gemini gibt keinen Text zurück, Grund: {stream.reason}, {stream.progress()}, "
+                f"letztes Stück: {stream.last[:300] or 'keins'}"
+            )
         return stream.text
 
 
@@ -199,11 +202,27 @@ class _Stream:
     """Was vom Strom bisher ankam: Gedanken und Antwort getrennt, und warum er endete."""
 
     started: float
+    chunks: int = 0
     thoughts: int = 0
     text: str = ""
     reason: str = "unbekannt"
+    last: str = ""
 
-    def take(self, chunk: dict[str, Any]) -> None:
+    def take(self, data: str) -> None:
+        """Nimmt ein Stück auf. Ein Fehler kann auch mitten im Strom kommen, statt als Status.
+
+        Raises:
+            ChooserError: Wenn das Stück ein Fehler ist.
+        """
+        self.chunks += 1
+        self.last = data.strip()
+        chunk = json.loads(data)
+        if "error" in chunk:
+            error = chunk["error"]
+            text = f"Gemini bricht ab mit {error.get('code')}: {error.get('message', '')[:200]}"
+            if error.get("code") in BUSY:
+                raise _BusyError(text)
+            raise ChooserError(text)
         candidate = (chunk.get("candidates") or [{}])[0]
         for part in candidate.get("content", {}).get("parts", []):
             if part.get("thought"):
@@ -219,8 +238,8 @@ class _Stream:
 
     def progress(self) -> str:
         return (
-            f"nach {self.elapsed():.0f} s kamen {self.thoughts} Zeichen Gedanken "
-            f"und {len(self.text)} Zeichen Antwort"
+            f"nach {self.elapsed():.0f} s kamen {self.chunks} Stücke, "
+            f"{self.thoughts} Zeichen Gedanken und {len(self.text)} Zeichen Antwort"
         )
 
 
