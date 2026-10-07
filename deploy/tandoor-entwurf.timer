@@ -1,0 +1,10 @@
+# Donnerstags früh. Persistent holt einen Lauf nach, wenn der Server zu der Zeit aus war.
+[Unit]
+Description=Entwurf des Wochenplans donnerstags
+
+[Timer]
+OnCalendar=Thu 06:30
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,11 @@
+# Lässt donnerstags den Entwurf der kommenden Woche wählen, siehe tandoor-entwurf.timer.
+# Liegt schon ein Entwurf da, bleibt er. Ausgabe und Fehler stehen in `journalctl -u tandoor-entwurf`.
+[Unit]
+Description=Entwurf des Wochenplans über das Modell
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/config/tandoor-automation
+ExecStart=/usr/bin/docker compose run --rm -T app plan draft

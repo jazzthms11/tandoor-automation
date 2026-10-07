@@ -63,7 +63,7 @@ nicht, abgesichert ist sie über den Netzweg. Einen anderen Port setzt `WEB_PORT
 
 | Seite | ersetzt | was sie tut |
 |---|---|---|
-| Wochenplan | `plan clear` | Einträge einer Woche, eigene zum Auswählen und Zurücknehmen |
+| Wochenplan | `plan apply`, `plan clear` | Entwurf vom Modell durchsehen, anpassen und freigeben, eigene Einträge zurücknehmen |
 | Einkauf | `plan shop` | Bestandsfragen nach Ort als Knöpfe, Vorschau, dann buchen und Liste schreiben |
 | Bons | `bon fetch`, `import-pdf`, `map`, `apply` | Lidl abholen, Kaufland-PDF hochladen, offene Bonnamen per Suche zuordnen, buchen |
 | Bewertung | `plan rate` | alle Rezepte mit Sternen, ein Klick schreibt sofort nach Tandoor |
@@ -148,9 +148,37 @@ uv run plan clear --eintrag 181               # nur diesen Eintrag löschen
 ```
 
 Zwischen `bundle` und `check` sitzt der Wähler: im Gespräch Claude über den Skill unter
-`.claude/skills/wochenplan/`, später ein unbeaufsichtigter Lauf. Beide gehen durch dieselbe
-Prüfung und wählen nach denselben Regeln: sie stehen in `src/tandoor_automation/regeln/wochenplan.md`,
-der Skill trägt nur den Ablauf im Gespräch.
+`.claude/skills/wochenplan/`, oder Gemini über die API. Beide gehen durch dieselbe Prüfung und
+wählen nach denselben Regeln: sie stehen in `src/tandoor_automation/regeln/wochenplan.md`, der Skill
+trägt nur den Ablauf im Gespräch.
+
+### Entwurf über das Modell
+
+```bash
+plan draft                                    # Entwurf der kommenden Woche, liegt einer da, bleibt er
+plan draft --hinweise "Samstag Besuch" --neu  # mit Hinweisen, ein vorhandener Entwurf wird ersetzt
+```
+
+Der Entwurf landet in der Datenbank und wird auf der Seite *Wochenplan* durchgesehen: Gericht
+tauschen aus einer Liste, die nach Note und Abstand filtert, einen Platz neu wählen lassen, Termin
+statt Rezept, Portionen und Notiz, oder ein Wunsch in Worten für die ganze Woche. Nach jeder
+Änderung läuft die Prüfung, Mängel stehen am Platz. *Freigeben* fragt nach der Aufteilung der
+Mittagessen und schreibt dann wie `plan apply`.
+
+Gewählt wird über die Gemini API, Schlüssel und Modell stehen in der `.env`, siehe `.env.example`.
+Findet die Prüfung Mängel, gehen sie einmal ans Modell zurück. Bleiben danach welche, kommt der
+Entwurf trotzdem, mit ihnen, und *Freigeben* bleibt gesperrt, bis sie behoben sind.
+
+Donnerstags entsteht der Entwurf von selbst. Die Units liegen unter `deploy/`:
+
+```bash
+sudo cp deploy/tandoor-entwurf.service deploy/tandoor-entwurf.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now tandoor-entwurf.timer
+systemctl list-timers tandoor-entwurf.timer   # wann er das nächste Mal läuft
+sudo systemctl start tandoor-entwurf.service  # jetzt sofort, zum Ausprobieren
+journalctl -u tandoor-entwurf                 # was er ausgegeben hat
+```
 
 `apply` holt den Stand frisch aus Tandoor und legt nur an, was dort noch fehlt. Ein zweiter Lauf
 über denselben Vorschlag schreibt deshalb nichts doppelt. `--dry-run` zeigt, was er tun würde.

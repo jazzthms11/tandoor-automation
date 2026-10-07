@@ -1,0 +1,10 @@
+<article class="ergebnis">
+  {% if applied.problems %}
+  <header><strong>Angehalten, nichts geschrieben</strong></header>
+  <p>Gegen den Stand von jetzt in Tandoor passt der Plan nicht:</p>
+  <ul>{% for problem in applied.problems %}<li>{{ problem }}</li>{% endfor %}</ul>
+  {% else %}
+  <header><strong>{{ "Vorschau, noch nichts geschrieben" if preview else "In Tandoor" }}</strong></header>
+  <ul>{% for outcome, line in applied.lines %}<li><small>{{ outcome }}</small> {{ line }}</li>{% endfor %}</ul>
+  {% endif %}
+</article>

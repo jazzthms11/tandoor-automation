@@ -41,9 +41,22 @@ def day(value: date) -> str:
 templates.env.filters["tag"] = day
 
 
+def number(value: float) -> str:
+    """Eine Zahl ohne überflüssiges Komma: 5 statt 5.0, aber 2,5."""
+    return f"{value:g}".replace(".", ",")
+
+
+templates.env.filters["zahl"] = number
+
+
+def open_tandoor() -> TandoorClient:
+    """Ein neuer Client, auch für Arbeit außerhalb einer Anfrage, etwa im Hintergrund."""
+    return TandoorClient(Settings())
+
+
 def tandoor() -> Iterator[TandoorClient]:
     """Ein Client je Anfrage. Er kostet keine Verbindung, solange nichts abgerufen wird."""
-    with TandoorClient(Settings()) as client:
+    with open_tandoor() as client:
         yield client
 
 

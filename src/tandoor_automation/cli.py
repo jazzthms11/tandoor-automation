@@ -8,9 +8,10 @@ import argparse
 from datetime import date
 from pathlib import Path
 
-from tandoor_automation import store, tables
+from tandoor_automation import drafts, store, tables
 from tandoor_automation.apply import Slot, describe_meal
 from tandoor_automation.bundle import PlanBundle, build_bundle, next_week, parse_week
+from tandoor_automation.chooser import ChooserError, Gemini
 from tandoor_automation.config import Settings
 from tandoor_automation.proposal import MARKS, Proposal, validate_proposal
 from tandoor_automation.shopping import Choice, Need, Question
@@ -270,6 +271,35 @@ def _read_choice(question: Question) -> Choice | None:
         print(f"  {0} bis {len(question.choices) - 1}, oder leer zum Überspringen")
 
 
+def _run_draft(week: str | None, hints: str, fresh: bool) -> None:
+    """Lässt das Modell einen Entwurf der Woche wählen und legt ihn für die Oberfläche ab.
+
+    Gedacht für den Lauf am Donnerstag. Liegt schon ein Entwurf da, bleibt er: vielleicht hat ihn
+    jemand von Hand angefangen, und ein neuer Lauf würfe das weg.
+
+    Args:
+        week: Zielwoche als ISO-Woche. Ohne Angabe die kommende Woche.
+        hints: Hinweise zur Woche, leer heißt Normalfall.
+        fresh: Auch einen vorhandenen Entwurf ersetzen.
+    """
+    target = week or next_week(date.today())
+    parse_week(target)
+    existing = drafts.load(target)
+    if existing is not None and not fresh:
+        print(f"{target}: Entwurf liegt schon vor, ersetzen mit --neu")
+        return
+    try:
+        with TandoorClient(Settings()) as tandoor:
+            draft = drafts.create(tandoor, Gemini(), target, hints)
+    except ChooserError as problem:
+        print(f"{target}: {problem}")
+        raise SystemExit(1) from None
+    print(draft.reasoning)
+    for problem in draft.problems:
+        print(f"Mangel: {problem}")
+    print(f"{target}: Entwurf mit {len(draft.proposal.entries)} Einträgen abgelegt")
+
+
 def _chosen(names: list[str]) -> list[tables.Table]:
     """Die genannten Tabellen, ohne Angabe alle."""
     return [tables.TABLES[name] for name in names or tables.TABLES]
@@ -402,10 +432,19 @@ def main() -> None:
         help="Nur diesen Eintrag löschen, mehrfach angebbar. Ohne Angabe die ganze Woche.",
     )
     clear.add_argument("--dry-run", action="store_true", help="Nur zeigen, was gelöscht würde")
+    draft = commands.add_parser("draft", help="Entwurf der Woche vom Modell wählen lassen")
+    draft.add_argument(
+        "--week",
+        help="Zielwoche als ISO-Woche, etwa 2026-W39. Ohne Angabe die kommende Woche.",
+    )
+    draft.add_argument("--hinweise", default="", help="Hinweise zur Woche, sonst Normalfall")
+    draft.add_argument("--neu", action="store_true", help="Einen vorhandenen Entwurf ersetzen")
     _add_data(commands)
     args = parser.parse_args()
     if args.command == "data":
         _run_data(args)
+    elif args.command == "draft":
+        _run_draft(args.week, args.hinweise, args.neu)
     elif args.command == "check":
         _run_check(args.datei)
     elif args.command == "apply":
