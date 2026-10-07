@@ -262,3 +262,79 @@ header nav li {
     padding-inline: 0.4rem;
   }
 }
+
+.begruendung {
+  margin: 0 0 1rem;
+}
+
+.maengel {
+  border-left: 4px solid var(--pico-del-color);
+}
+
+.plaetze {
+  padding: 0;
+}
+
+.plaetze li {
+  list-style: none;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--pico-muted-border-color);
+}
+
+.platz.mangel {
+  border-left: 4px solid var(--pico-del-color);
+  padding-left: 0.6rem;
+}
+
+.platz > strong {
+  display: block;
+}
+
+.detail,
+.platz > .warnung {
+  display: block;
+}
+
+.detail {
+  color: var(--pico-muted-color);
+}
+
+.aendern {
+  margin: 0.4rem 0 0;
+}
+
+.aendern summary {
+  font-size: 0.9rem;
+  color: var(--pico-primary);
+}
+
+.untertitel {
+  margin: 0.5rem 0 0.25rem;
+  font-size: 0.85rem;
+  color: var(--pico-muted-color);
+}
+
+.zeile {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0.5rem 0;
+}
+
+.zeile input {
+  margin: 0;
+}
+
+.zeile button.klein {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.zeile .portionen {
+  max-width: 5.5rem;
+}
+
+button.gesperrt {
+  opacity: 0.6;
+  border-style: dashed;
+}

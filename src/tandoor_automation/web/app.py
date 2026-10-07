@@ -14,6 +14,7 @@ from fastapi.responses import PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from tandoor_automation import store
+from tandoor_automation.chooser import ChooserError
 from tandoor_automation.web import bewertung, bons, einkauf, plan
 from tandoor_automation.web.common import HERE, PAGES, templates
 
@@ -44,6 +45,18 @@ def _problem(request: Request, message: str, status: int) -> Response:
 def _tandoor_down(request: Request, error: httpx.HTTPError) -> Response:
     """Zeigt einen Fehler von Tandoor als Meldung statt als Absturz."""
     return _problem(request, f"Tandoor antwortet nicht wie erwartet: {error}", 502)
+
+
+@app.exception_handler(store.StaleDraftError)
+def _stale(request: Request, _: store.StaleDraftError) -> Response:
+    """Jemand anderes hat den Entwurf inzwischen geändert, die Seite zeigt einen alten Stand."""
+    return _problem(request, "Der Entwurf wurde inzwischen geändert. Seite neu laden.", 409)
+
+
+@app.exception_handler(ChooserError)
+def _chooser(request: Request, error: ChooserError) -> Response:
+    """Das Modell ist nicht erreichbar oder nicht eingerichtet."""
+    return _problem(request, str(error), 502)
 
 
 @app.exception_handler(ValueError)

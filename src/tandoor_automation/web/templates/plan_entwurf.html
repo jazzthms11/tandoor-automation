@@ -1,0 +1,105 @@
+{# hx-swap vererbt sich an alles darin. Wer nur einen Teil füllt, setzt deshalb innerHTML selbst. #}
+<section id="entwurf" hx-get="/plan/entwurf?woche={{ week }}" hx-swap="outerHTML"
+         hx-trigger="{% if job and job.running %}every 3s{% else %}plan-geschrieben from:body{% endif %}">
+  <h2>Entwurf</h2>
+  {% if job and job.running %}
+  <p aria-busy="true">Das Modell wählt, das dauert bis zu einer Minute …</p>
+  {% else %}
+  {% if job and job.error %}<p class="warnung">Der letzte Lauf ist gescheitert: {{ job.error }}</p>{% endif %}
+
+  {% if not draft %}
+  <form hx-post="/plan/entwurf" hx-target="#entwurf" hx-swap="outerHTML" hx-disabled-elt="find button">
+    <input type="hidden" name="woche" value="{{ week }}">
+    <label>
+      Hinweise zur Woche
+      <textarea name="hinweise" rows="2" placeholder="leer heißt Normalfall, etwa: Samstag Besuch, Sonntag wenig Zeit"></textarea>
+    </label>
+    <button type="submit">Woche planen</button>
+  </form>
+
+  {% elif draft.released_at %}
+  <p>In Tandoor geschrieben am {{ draft.released_at.date()|tag }} Der Plan steht unten.</p>
+  <details>
+    <summary>Neu entwerfen</summary>
+    <button class="secondary" hx-post="/plan/entwurf/verwerfen" hx-vals='{"woche": "{{ week }}"}'
+            hx-target="#entwurf" hx-swap="outerHTML">Entwurf verwerfen</button>
+  </details>
+
+  {% else %}
+  <div id="entwurf-stand">
+    <input type="hidden" name="woche" value="{{ week }}">
+    <input type="hidden" name="version" value="{{ draft.version }}">
+  </div>
+  {% if draft.reasoning %}<blockquote class="begruendung">{{ draft.reasoning }}</blockquote>{% endif %}
+  {% if draft.hints %}<p><small>Hinweise: {{ draft.hints }}</small></p>{% endif %}
+  {% if draft.problems %}
+  <article class="maengel">
+    <header><strong>{{ draft.problems|length }} {{ "Mangel" if draft.problems|length == 1 else "Mängel" }}, so geht der Plan nicht nach Tandoor</strong></header>
+    <ul>{% for problem in draft.problems %}<li>{{ problem }}</li>{% endfor %}</ul>
+  </article>
+  {% endif %}
+
+  <ul class="plaetze">
+    {% for index, entry in places %}
+    {% set own = draft.problems_of(entry) %}
+    <li class="platz{% if own %} mangel{% endif %}">
+      <span class="wann">{{ entry.from_date|tag }}{% if entry.to_date != entry.from_date %} bis {{ entry.to_date|tag }}{% endif %} · {{ meal_names.get(entry.meal_type_id, entry.meal_type_id) }}</span>
+      <strong>{{ entry.recipe_name or entry.title }}</strong>
+      <small class="detail">
+        {% if entry.recipe_id %}{{ entry.servings|zahl }} Portionen{% set stars = ratings.get(entry.recipe_id, 0) %} · {% if stars %}{{ "★" * stars }}{% else %}unbewertet{% endif %}{% else %}Termin ohne Rezept{% endif %}
+      </small>
+      {% if entry.note %}<small class="notiz">{{ entry.note }}</small>{% endif %}
+      {% for problem in own %}<small class="warnung">{{ problem }}</small>{% endfor %}
+
+      <details class="aendern" hx-get="/plan/entwurf/kandidaten?woche={{ week }}&version={{ draft.version }}&index={{ index }}"
+               hx-trigger="toggle once" hx-target="find .tausch-liste" hx-swap="innerHTML">
+        <summary>Ändern</summary>
+        <p class="untertitel">Tauschen</p>
+        <input type="search" name="q" placeholder="Rezept suchen" aria-label="Rezept suchen"
+               hx-get="/plan/entwurf/kandidaten?woche={{ week }}&version={{ draft.version }}&index={{ index }}"
+               hx-trigger="input changed delay:250ms, search" hx-target="next .tausch-liste" hx-swap="innerHTML">
+        <div class="tausch-liste treffer"><small aria-busy="true">Lade Vorschläge …</small></div>
+
+        <form class="zeile" hx-post="/plan/entwurf/neu-waehlen" hx-include="#entwurf-stand" hx-vals='{"index": {{ index }}}'
+              hx-target="#entwurf" hx-swap="outerHTML">
+          <input name="wunsch" placeholder="Wunsch, etwa: was mit Linsen" aria-label="Wunsch an das Modell">
+          <button type="submit" class="secondary klein">Modell fragen</button>
+        </form>
+
+        <form class="zeile" hx-post="/plan/entwurf/termin" hx-include="#entwurf-stand" hx-vals='{"index": {{ index }}}'
+              hx-target="#entwurf" hx-swap="outerHTML">
+          <input name="titel" placeholder="Termin, etwa: Besuch bei Anna" aria-label="Termin statt Rezept" required>
+          <button type="submit" class="secondary klein">Als Termin</button>
+        </form>
+
+        {% if entry.recipe_id %}
+        <form class="zeile" hx-post="/plan/entwurf/details" hx-include="#entwurf-stand" hx-vals='{"index": {{ index }}}'
+              hx-target="#entwurf" hx-swap="outerHTML">
+          <input name="portionen" type="number" min="0.5" step="0.5" value="{{ entry.servings|zahl|replace(',', '.') }}" aria-label="Portionen" class="portionen">
+          <input name="notiz" value="{{ entry.note }}" placeholder="Notiz" aria-label="Notiz">
+          <button type="submit" class="secondary klein">Speichern</button>
+        </form>
+        {% endif %}
+      </details>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <form hx-post="/plan/entwurf/wunsch" hx-include="#entwurf-stand" hx-target="#entwurf" hx-swap="outerHTML" hx-disabled-elt="find button">
+    <label>
+      Wunsch an das Modell für die ganze Woche
+      <textarea name="wunsch" rows="2" required placeholder="etwa: Samstag sind wir eingeladen, Donnerstag wenig Zeit"></textarea>
+    </label>
+    <button type="submit" class="secondary">Anpassen lassen</button>
+  </form>
+
+  <div class="grid">
+    <button hx-get="/plan/entwurf/freigabe?woche={{ week }}&version={{ draft.version }}" hx-target="#freigabe" hx-swap="innerHTML"
+            {% if draft.problems %}disabled title="Erst die Mängel beheben"{% endif %}>Freigeben …</button>
+    <button class="secondary outline" hx-post="/plan/entwurf/verwerfen" hx-include="#entwurf-stand"
+            hx-target="#entwurf" hx-swap="outerHTML" hx-confirm="Entwurf verwerfen?">Verwerfen</button>
+  </div>
+  <div id="freigabe"></div>
+  {% endif %}
+  {% endif %}
+</section>

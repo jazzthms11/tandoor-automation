@@ -1,0 +1,11 @@
+{% for candidate in found %}
+<button class="outline klein{% if not candidate.allowed %} gesperrt{% endif %}" hx-post="/plan/entwurf/tauschen"
+        hx-include="#entwurf-stand" hx-vals='{"index": {{ index }}, "recipe_id": {{ candidate.recipe.id }}}'
+        hx-target="#entwurf" hx-swap="outerHTML"
+        {% if not candidate.allowed %}hx-confirm="Laut Note und Abstand gerade nicht dran. Trotzdem nehmen?"{% endif %}>
+  {{ candidate.recipe.name }}
+  <small>{% if candidate.recipe.rating %}{{ "★" * candidate.recipe.rating }}{% else %}unbewertet{% endif %} · {% if candidate.weeks_ago is none %}lange nicht{% elif candidate.weeks_ago == 1 %}letzte Woche{% else %}vor {{ candidate.weeks_ago }} Wochen{% endif %}</small>
+</button>
+{% else %}
+<small>{{ "Nichts gefunden." if searched else "Kein Gericht ist gerade dran, über die Suche geht jedes." }}</small>
+{% endfor %}

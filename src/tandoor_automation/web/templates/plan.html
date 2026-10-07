@@ -3,10 +3,14 @@
 {% block content %}
 <hgroup>
   <h1>Wochenplan</h1>
-  <p>Was in Tandoor steht. Eigene Einträge lassen sich hier zurücknehmen.</p>
+  <p>Erst Entwurf, dann Tandoor. Geschrieben wird nur auf Knopfdruck.</p>
 </hgroup>
 {% include "woche.html" %}
-<div id="eintraege" hx-get="/plan/eintraege?woche={{ week }}" hx-trigger="load">
-  <p aria-busy="true">Frage Tandoor nach dem Plan …</p>
-</div>
+{% include "plan_entwurf.html" %}
+<section>
+  <h2>In Tandoor</h2>
+  <div id="eintraege" hx-get="/plan/eintraege?woche={{ week }}" hx-trigger="load, plan-geschrieben from:body">
+    <p aria-busy="true">Frage Tandoor nach dem Plan …</p>
+  </div>
+</section>
 {% endblock %}

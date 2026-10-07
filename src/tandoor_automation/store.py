@@ -113,6 +113,32 @@ class BookedReceipt(SQLModel, table=True):
     booked_at: datetime = Field(default_factory=lambda: datetime.now().astimezone())
 
 
+class Draft(SQLModel, table=True):
+    """Der Entwurf eines Wochenplans, bis er in Tandoor steht.
+
+    Vorschlag und Bündel liegen als JSON da. Das Bündel ist der Stand, gegen den gewählt wurde:
+    jede Änderung am Entwurf wird gegen ihn geprüft, ohne Tandoor neu zu fragen. Erst die
+    Freigabe holt den Stand frisch.
+
+    `version` zählt jede Änderung. Zwei Leute können gleichzeitig am Entwurf sitzen, und wer auf
+    einem veralteten Stand ändert, soll das merken, statt die Änderung des anderen zu überschreiben.
+    """
+
+    week: str = Field(primary_key=True)
+    proposal: str
+    bundle: str
+    reasoning: str = ""
+    hints: str = ""
+    problems: str = "[]"
+    version: int = 1
+    released_at: datetime | None = None
+    changed_at: datetime = Field(default_factory=lambda: datetime.now().astimezone())
+
+
+class StaleDraftError(Exception):
+    """Der Entwurf wurde inzwischen von jemand anderem geändert."""
+
+
 _engines: dict[Path, Engine] = {}
 
 
@@ -312,6 +338,52 @@ def decide(key: tuple[str, str], food_id: int | None) -> None:
         row.changed_at = datetime.now().astimezone()
         db.add(row)
         db.commit()
+
+
+def draft(week: str) -> Draft | None:
+    """Der Entwurf einer Woche, wenn es einen gibt."""
+    with session() as db:
+        return db.get(Draft, week)
+
+
+def put_draft(new: Draft, expected: int | None) -> Draft:
+    """Schreibt einen Entwurf, aber nur auf den Stand, von dem die Änderung ausging.
+
+    Args:
+        new: Der Entwurf, `version` wird hier gesetzt.
+        expected: Die Version, auf der geändert wurde. Ohne Angabe ersetzt der Entwurf jeden
+            vorigen, so wie ein neuer Lauf des Modells den alten Entwurf ersetzt.
+
+    Returns:
+        Der geschriebene Entwurf mit seiner neuen Version.
+
+    Raises:
+        StaleDraftError: Wenn inzwischen jemand anderes geändert hat.
+    """
+    with session() as db:
+        old = db.get(Draft, new.week)
+        if old is not None and expected is not None and old.version != expected:
+            raise StaleDraftError(new.week)
+        if expected is not None and old is None:
+            raise StaleDraftError(new.week)
+        new.version = old.version + 1 if old else 1
+        new.changed_at = datetime.now().astimezone()
+        if old is not None:
+            db.delete(old)
+            db.flush()
+        db.add(new)
+        db.commit()
+        db.refresh(new)
+        return new
+
+
+def drop_draft(week: str) -> None:
+    """Verwirft den Entwurf einer Woche."""
+    with session() as db:
+        row = db.get(Draft, week)
+        if row is not None:
+            db.delete(row)
+            db.commit()
 
 
 def booked() -> set[str]:
