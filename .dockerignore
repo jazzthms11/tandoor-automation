@@ -15,10 +15,4 @@ importiert.txt
 __pycache__/
 *.py[cod]
 .pytest_cache/
-data/
-*.tsv
-importiert.txt
 .ruff_cache/
-data/
-*.tsv
-importiert.txt

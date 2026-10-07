@@ -1,0 +1,10 @@
+{% if unknown %}
+<p class="warnung">Abgebrochen, nichts geschrieben. Unbekannte Rezepte: {{ unknown|join(", ") }}. Erst oben entfernen.</p>
+{% elif lines %}
+<p>{{ lines|length }} {{ "Änderung" if lines|length == 1 else "Änderungen" }} in Tandoor:</p>
+<ul>
+  {% for verb, stars, name in lines %}<li>{{ verb }}: {{ "★" * stars if stars else "–" }} {{ name }}</li>{% endfor %}
+</ul>
+{% else %}
+<p>Tandoor trägt schon alle Noten.</p>
+{% endif %}

@@ -25,7 +25,7 @@ from alembic import command
 from alembic.config import Config
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import Engine, event
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from sqlmodel import Field, Session, SQLModel, col, create_engine, select
 
 from tandoor_automation.classes import Placement
 from tandoor_automation.mapping import Entry
@@ -195,6 +195,46 @@ def ratings() -> dict[int, int]:
         return {row.recipe_id: row.stars for row in db.exec(select(Rating))}
 
 
+def set_rating(recipe_id: int, stars: int, note: str = "") -> None:
+    """Setzt die Note eines Rezepts.
+
+    Ein Rezept, das noch nicht in der Tabelle steht, kommt ans Ende, in den letzten Abschnitt,
+    damit ein Export so aussieht, als wäre die Zeile dort von Hand angefügt worden.
+
+    Args:
+        recipe_id: Das Rezept.
+        stars: Die Note von 0 bis 5.
+        note: Gedächtnisstütze, nur für eine neue Zeile, gedacht für den Namen.
+    """
+    with session() as db:
+        row = db.get(Rating, recipe_id)
+        if row is None:
+            last = db.exec(select(Rating).order_by(col(Rating.position).desc())).first()
+            row = Rating(
+                recipe_id=recipe_id,
+                stars=stars,
+                note=note,
+                section=last.section if last else "",
+                position=last.position + 1 if last else 0,
+            )
+        elif row.stars == stars:
+            return
+        else:
+            row.stars = stars
+            row.changed_at = datetime.now().astimezone()
+        db.add(row)
+        db.commit()
+
+
+def drop_rating(recipe_id: int) -> None:
+    """Nimmt ein Rezept aus der Tabelle, etwa weil es in Tandoor gelöscht wurde."""
+    with session() as db:
+        row = db.get(Rating, recipe_id)
+        if row is not None:
+            db.delete(row)
+            db.commit()
+
+
 def categories() -> dict[str, Placement]:
     """Klasse und Ort je Supermarkt-Kategorie."""
     with session() as db:
@@ -251,6 +291,27 @@ def add_mapping(entries: list[Entry]) -> int:
         )
         db.commit()
     return len(fresh)
+
+
+def decide(key: tuple[str, str], food_id: int | None) -> None:
+    """Entscheidet einen Bonnamen: zugeordnet zu einem Lebensmittel, oder ohne ID verworfen.
+
+    Args:
+        key: Laden und Bonname, wie in der Zuordnung.
+        food_id: Das Lebensmittel in Tandoor. Ohne Angabe wird der Name verworfen.
+
+    Raises:
+        KeyError: Wenn die Zuordnung den Namen nicht kennt.
+    """
+    with session() as db:
+        row = db.get(ReceiptMapping, key)
+        if row is None:
+            raise KeyError(key)
+        row.food_id = food_id
+        row.discarded = food_id is None
+        row.changed_at = datetime.now().astimezone()
+        db.add(row)
+        db.commit()
 
 
 def booked() -> set[str]:

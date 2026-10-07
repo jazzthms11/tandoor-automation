@@ -1,0 +1,32 @@
+{% if mine %}
+<form hx-post="/plan/zuruecknehmen" hx-target="#zurueck" hx-confirm="Ausgewählte Einträge aus Tandoor löschen?">
+  <input type="hidden" name="woche" value="{{ week }}">
+  <ul class="eintraege">
+    {% for meal in mine %}
+    <li>
+      <label class="auswahl">
+        <input type="checkbox" name="eintrag" value="{{ meal.id }}">
+        <span>
+          <span class="wann">{{ meal.from_date.date()|tag }}{% if meal.to_date.date() != meal.from_date.date() %} bis {{ meal.to_date.date()|tag }}{% endif %} · {{ meal.meal_type_name }}</span>
+          {{ meal.recipe_name or meal.title }}
+          {% if meal.note %}<small class="notiz">{{ meal.note.splitlines()[0] }}</small>{% endif %}
+        </span>
+      </label>
+    </li>
+    {% endfor %}
+  </ul>
+  <button type="submit" class="secondary">Ausgewählte zurücknehmen</button>
+</form>
+<div id="zurueck" aria-live="polite"></div>
+{% else %}
+<p>Keine eigenen Einträge in dieser Woche.</p>
+{% endif %}
+{% if others %}
+<h2>Von anderen</h2>
+<p><small>Bleiben stehen, gelöscht wird nur, was unter dem eigenen Token angelegt wurde.</small></p>
+<ul class="eintraege">
+  {% for meal in others %}
+  <li><span class="wann">{{ meal.from_date.date()|tag }} · {{ meal.meal_type_name }}</span> {{ meal.recipe_name or meal.title }}</li>
+  {% endfor %}
+</ul>
+{% endif %}

@@ -1,0 +1,16 @@
+<article class="ergebnis">
+  {% if result.first_run %}
+  <p class="warnung">Beim ersten Lauf braucht es ein Startdatum.</p>
+  {% elif result.blocked %}
+  <header><strong>Angehalten, nichts gebucht</strong></header>
+  {% if result.open_names %}<p>Erst zuordnen: {{ result.open_names|join(", ") }}</p>{% endif %}
+  {% if result.gone %}<p>Lebensmittel gibt es nicht mehr: {% for name, food_id in result.gone %}{{ name }} ({{ food_id }}){% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+  {% if result.missing %}<p>Tandoor kennt nicht: {{ result.missing|join(", ") }}</p>{% endif %}
+  {% else %}
+  <header><strong>{{ "Vorschau, noch nichts gebucht" if preview else "Gebucht" }}</strong></header>
+  <p>{{ result.booked }} Bons{% if result.skipped %}, {{ result.skipped }} übersprungen{% endif %}, {{ result.known }} lagen schon vor.</p>
+  {% if result.lines %}
+  <ul>{% for verb, line in result.lines %}<li><small>{{ verb }}</small> {{ line }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% endif %}
+</article>

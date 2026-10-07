@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Bons{% endblock %}
+{% block content %}
+<hgroup>
+  <h1>Bons</h1>
+  <p>Holen, zuordnen, buchen. Was gekauft ist, landet im Bestand.</p>
+</hgroup>
+
+<section>
+  <h2>1. Holen</h2>
+  <div class="grid">
+    <div>
+      <button class="secondary" hx-post="/bons/lidl" hx-target="#holen" hx-disabled-elt="this">Bei Lidl abholen</button>
+    </div>
+    <form hx-post="/bons/kaufland" hx-encoding="multipart/form-data" hx-target="#holen" hx-disabled-elt="find button">
+      <label>
+        Kaufland-Beleg als PDF
+        <input type="file" name="dateien" accept="application/pdf" multiple required>
+      </label>
+      <button type="submit" class="secondary">Einlesen</button>
+    </form>
+  </div>
+  <div id="holen" aria-live="polite"></div>
+</section>
+
+<section>
+  <h2>2. Zuordnen</h2>
+  <div id="zuordnung" hx-get="/bons/zuordnung" hx-trigger="load, holen-fertig from:body">
+    <p aria-busy="true">Lese die Bons …</p>
+  </div>
+</section>
+
+<section>
+  <h2>3. Buchen</h2>
+  <form hx-post="/bons/buchen" hx-target="#buchung" hx-swap="innerHTML show:top" hx-disabled-elt="find button">
+    {% if first_run %}
+    <label>
+      Ab welchem Tag?
+      <input type="date" name="seit" required>
+      <small>Es ist noch nie gebucht worden. Ältere Bons gelten als abgehandelt, sonst liefe alles in den Bestand.</small>
+    </label>
+    {% endif %}
+    <div class="grid">
+      <button type="submit" name="vorschau" value="true" class="secondary">Vorschau</button>
+      <button type="submit" hx-confirm="Zugänge in den Bestand buchen?">Buchen</button>
+    </div>
+  </form>
+  <div id="buchung" aria-live="polite"></div>
+</section>
+{% endblock %}

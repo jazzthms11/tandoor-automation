@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Einkauf{% endblock %}
+{% block content %}
+<hgroup>
+  <h1>Einkauf</h1>
+  <p>Was ist noch da? Ohne Antwort kommt es auf die Liste.</p>
+</hgroup>
+{% include "woche.html" %}
+<div id="fragen" hx-get="/einkauf/fragen?woche={{ week }}" hx-trigger="load">
+  <p aria-busy="true">Frage Tandoor nach Plan und Bestand …</p>
+</div>
+{% endblock %}

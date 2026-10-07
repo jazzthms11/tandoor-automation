@@ -48,6 +48,35 @@ sudo chown 1000:1000 /srv/data/tandoor-automation
 `TZ=Europe/Berlin` setzt die Compose-Datei, sonst stünden die Planeinträge zwei Stunden daneben.
 In `user:` steht die eigene ID auf dem Server, nachzusehen mit `id`.
 
+### Oberfläche
+
+Neben der CLI läuft auf dem Server eine Oberfläche im Browser, aus demselben Image:
+
+```bash
+docker compose up -d          # startet den Dienst web, nach einem Neustart von selbst wieder
+docker compose ps             # zeigt, ob er läuft und healthy ist
+docker compose logs -f web    # was er tut
+```
+
+Erreichbar unter `http://leosserver:8095`, nur im Heimnetz und über WireGuard. Ein Login gibt es
+nicht, abgesichert ist sie über den Netzweg. Einen anderen Port setzt `WEB_PORT` in der `.env`.
+
+| Seite | ersetzt | was sie tut |
+|---|---|---|
+| Wochenplan | `plan clear` | Einträge einer Woche, eigene zum Auswählen und Zurücknehmen |
+| Einkauf | `plan shop` | Bestandsfragen nach Ort als Knöpfe, Vorschau, dann buchen und Liste schreiben |
+| Bons | `bon fetch`, `import-pdf`, `map`, `apply` | Lidl abholen, Kaufland-PDF hochladen, offene Bonnamen per Suche zuordnen, buchen |
+| Bewertung | `plan rate` | alle Rezepte mit Sternen, ein Klick schreibt sofort nach Tandoor |
+Nach `git pull` holen `docker compose build` und `docker compose up -d` die neue Fassung.
+
+Gebaut ist sie mit FastAPI, Jinja2 und htmx: der Server liefert fertiges HTML, ein Klick tauscht
+nur den Teil der Seite, der sich ändert. htmx und Pico CSS liegen unter `web/static/` im Paket,
+ohne CDN und ohne Build-Schritt. Lokal startet sie mit:
+
+```bash
+uv run uvicorn tandoor_automation.web.app:app --reload
+```
+
 Die Datenbank auf dem Server ist die einzige. `plan shop`, `plan rate` und alles unter `bon`
 laufen deshalb dort: auf dem Laptop legte jeder Befehl eine eigene, leere Datenbank unter `data/`
 an. Was nur Tandoor braucht, also `plan bundle`, `check`, `apply` und `clear`, geht weiter überall.
@@ -55,8 +84,8 @@ an. Was nur Tandoor braucht, also `plan bundle`, `check`, `apply` und `clear`, g
 ### Eigene Tabellen
 
 Was Tandoor nicht kennt, steht in SQLite: Grundbewertung, Klassen, Ausnahmen, Intervalle, die
-Zuordnung der Bonnamen und welche Bons gebucht sind. Bis die Oberfläche Seiten dafür hat, ist die
-TSV-Datei der Weg zum Ändern:
+Zuordnung der Bonnamen und welche Bons gebucht sind. Bewertung und offene Bonnamen haben eine
+Seite in der Oberfläche, für den Rest ist die TSV-Datei der Weg zum Ändern, bis auch er eine hat:
 
 ```bash
 plan data export klassen          # schreibt klassen.tsv in den aktuellen Ordner
@@ -129,7 +158,8 @@ der Skill trägt nur den Ablauf im Gespräch.
 `clear` ist der Rückweg und löscht nur, was unter dem eigenen Token angelegt wurde: die Instanz ist
 geteilt, der Platz eines Mitessers bleibt stehen und wird genannt. Maßgeblich ist der erste Tag
 eines Eintrags, ein Abendessen für zwei Abende darf also über den Freitag hinausragen. Die IDs
-stehen in der Ausgabe von `plan clear --dry-run`.
+stehen in der Ausgabe von `plan clear --dry-run`. In der Oberfläche ist das die Seite *Wochenplan*,
+dort werden die Einträge angehakt statt per ID genannt.
 
 ## Kassenbons
 
@@ -141,6 +171,10 @@ uv run bon fetch             # fehlende Bons holen, unverändert nach bons/lidl/
 Der Ordner ist zugleich der Stand: was dort liegt, wird nicht noch einmal geholt. Abgelegt wird
 die Antwort der API unverändert, denn was ein Bon für den Bestand hergibt, entscheidet erst die
 Zuordnung, und ein Fehler dort soll keinen neuen Abruf kosten.
+
+In der Oberfläche liegt der ganze Weg auf der Seite *Bons*: abholen, Kaufland-PDF hochladen,
+offene Bonnamen zuordnen und buchen. Die Abläufe stehen in `intake.py`, die CLI `bon` und die
+Seite rufen dieselben Funktionen auf. Nur `bon login` bleibt CLI.
 
 ### Kaufland
 
@@ -258,6 +292,10 @@ ein Gericht darf: 5 geht quasi immer, 3 nur wenn es lange her ist, 1 nie, 0 hei�
 Tandoor hat dafür kein eigenes Feld, es mittelt die Noten im Kochprotokoll. `plan rate` hält
 deshalb genau einen Eintrag je Rezept vor und ändert ihn, statt einen zweiten anzulegen. Die Tabelle
 ist die Quelle: wer in Tandoors Oberfläche bewertet, verzieht den Durchschnitt.
+
+Bewertet wird auf der Seite *Bewertung* der Oberfläche. Ein Klick auf einen Stern speichert in der
+Datenbank und schreibt sofort nach Tandoor, der gesetzte Stern nochmal nimmt die Note zurück. War
+Tandoor gerade nicht erreichbar, holt *Mit Tandoor abgleichen* das nach, wie `plan rate`.
 
 ## Nährwerte
 

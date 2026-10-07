@@ -1,0 +1,41 @@
+<form hx-post="/einkauf" hx-target="#ergebnis" hx-swap="innerHTML show:top" hx-disabled-elt="find button">
+  <input type="hidden" name="woche" value="{{ week }}">
+  {% for place, questions in places %}
+  <h2 class="ort">{{ place or "ohne Ort" }}</h2>
+  {% for question in questions %}
+  <fieldset class="frage">
+    <legend>
+      <strong>{{ question.food_name }}</strong>
+      <small>{{ question.amount|string|replace(".", ",") }} {{ question.unit }} gebucht</small>
+    </legend>
+    {% if question.food_id in needs %}<small class="bedarf">{{ needs[question.food_id] }}</small>{% endif %}
+    <div class="knoepfe">
+      <label><input type="radio" name="antwort-{{ question.entry_id }}" value="" checked><span>offen</span></label>
+      {% for choice in question.choices %}
+      <label>
+        <input type="radio" name="antwort-{{ question.entry_id }}" value="{{ question.entry_id }}:{{ choice.amount }}">
+        <span>{{ choice.label }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+  {% endfor %}
+  {% else %}
+  <p>Keine Fragen diese Woche.</p>
+  {% endfor %}
+
+  {% if unasked %}
+  <details>
+    <summary>Ungefragt auf die Liste ({{ unasked|length }})</summary>
+    <ul>
+      {% for item in unasked %}<li>{{ item.food_name }}{% if item.food_id in needs %} <small>{{ needs[item.food_id] }}</small>{% endif %}</li>{% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+
+  <div class="grid">
+    <button type="submit" name="vorschau" value="true" class="secondary">Vorschau</button>
+    <button type="submit" hx-confirm="Bestand buchen und Einkaufsliste schreiben?">Buchen und Liste schreiben</button>
+  </div>
+</form>
+<div id="ergebnis" aria-live="polite"></div>

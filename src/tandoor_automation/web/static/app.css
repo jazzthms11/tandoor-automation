@@ -1,0 +1,264 @@
+/* Was Pico nicht von selbst mitbringt. Mobil zuerst: die Liste ist eine Spalte, die Sterne
+   rutschen auf schmalen Bildschirmen unter den Namen. */
+
+.rezepte {
+  padding: 0;
+}
+
+.rezepte li {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  padding: 0.5rem 0;
+  margin: 0;
+  border-bottom: 1px solid var(--pico-muted-border-color);
+}
+
+.rezepte .name {
+  flex: 1 1 12rem;
+}
+
+/* Pico macht aus role="group" eine volle Zeile mit Rahmen, gedacht für Knöpfe im Formular. */
+.sterne {
+  display: flex;
+  width: auto;
+  margin: 0;
+  box-shadow: none;
+}
+
+.sterne button {
+  all: unset;
+  cursor: pointer;
+  font-size: 1.6rem;
+  line-height: 1;
+  padding: 0.2rem 0.25rem;
+  color: var(--pico-muted-color);
+  opacity: 0.35;
+}
+
+.sterne button[aria-pressed="true"],
+.legende {
+  color: #e8a317;
+  opacity: 1;
+}
+
+.sterne button:focus-visible {
+  outline: 2px solid var(--pico-primary);
+  border-radius: 0.25rem;
+}
+
+.sterne button.htmx-request {
+  opacity: 0.4;
+}
+
+.status {
+  flex-basis: 100%;
+  color: var(--pico-muted-color);
+}
+
+.warnung {
+  color: var(--pico-del-color);
+}
+
+.fehler {
+  padding: 0.75rem 1rem;
+  border-radius: var(--pico-border-radius);
+  background: var(--pico-del-color);
+  color: #fff;
+}
+
+button.klein {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
+}
+
+.abschluss {
+  margin-top: 2rem;
+}
+
+.woche {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.woche a {
+  font-size: 1.6rem;
+  text-decoration: none;
+  padding: 0 0.75rem;
+}
+
+.ort {
+  font-size: 1.1rem;
+  margin: 1.5rem 0 0.5rem;
+  color: var(--pico-muted-color);
+}
+
+.frage {
+  border-bottom: 1px solid var(--pico-muted-border-color);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.frage legend small,
+.bedarf,
+.notiz {
+  display: block;
+  color: var(--pico-muted-color);
+}
+
+/* Die Antworten als Knöpfe: das Feld selbst ist unsichtbar, die Beschriftung ist der Knopf. */
+.knoepfe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.knoepfe label {
+  margin: 0;
+}
+
+.knoepfe input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.knoepfe span {
+  display: inline-block;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.knoepfe input:checked + span {
+  background: var(--pico-primary-background);
+  border-color: var(--pico-primary-background);
+  color: var(--pico-primary-inverse);
+}
+
+.knoepfe input:focus-visible + span {
+  outline: 2px solid var(--pico-primary);
+}
+
+.eintraege {
+  padding: 0;
+}
+
+.eintraege li {
+  list-style: none;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--pico-muted-border-color);
+}
+
+.wann {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--pico-muted-color);
+}
+
+nav a[aria-current="page"] {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
+.auswahl {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin: 0;
+}
+
+.auswahl input {
+  margin-top: 0.3rem;
+}
+
+.ergebnis h3 {
+  font-size: 1rem;
+  margin: 1rem 0 0.25rem;
+}
+
+.zuordnung {
+  padding: 0;
+}
+
+.zuordnung li {
+  list-style: none;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--pico-muted-border-color);
+}
+
+.zuordnung li > small {
+  display: block;
+  color: var(--pico-muted-color);
+}
+
+.treffer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+}
+
+.treffer button.klein {
+  margin: 0;
+}
+
+.treffer button small {
+  color: var(--pico-muted-color);
+}
+
+.suche {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.suche input {
+  margin: 0;
+}
+
+.suche button.klein {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.entschieden small {
+  margin-left: 0.5rem;
+  color: var(--pico-ins-color);
+}
+
+.meldung {
+  font-family: var(--pico-font-family-monospace);
+  font-size: 0.85rem;
+}
+
+/* Vier Seiten passen am Handy nicht neben den Namen, die Navigation bricht dann um. */
+header nav {
+  flex-wrap: wrap;
+}
+
+header nav ul {
+  flex-wrap: wrap;
+}
+
+header nav li {
+  padding-block: 0.4rem;
+}
+
+@media (max-width: 576px) {
+  header nav > ul:first-child {
+    display: none;
+  }
+
+  header nav li {
+    padding-inline: 0.4rem;
+  }
+}

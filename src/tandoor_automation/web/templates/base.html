@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{% block title %}{% endblock %} · Küche</title>
+  {# Relative Pfade statt url_for: hinter dem Reverse Proxy kennt der Dienst das Schema nicht. #}
+  <link rel="stylesheet" href="/static/pico.min.css">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body>
+  <header class="container">
+    <nav>
+      <ul><li><strong>Küche</strong></li></ul>
+      <ul>
+        {% for title, path in pages %}
+        <li><a href="{{ path }}"{% if request.url.path.startswith(path) %} aria-current="page"{% endif %}>{{ title }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </header>
+  <main class="container">
+    <p id="fehler" class="fehler" role="alert" hidden></p>
+    {% block content %}{% endblock %}
+  </main>
+  <script>
+    // htmx tauscht bei einem Fehler nichts aus. Ohne diese Zeilen sähe ein Klick aus, als
+    // wäre nichts passiert.
+    function zeigeFehler(text) {
+      const box = document.getElementById("fehler");
+      box.textContent = text;
+      box.hidden = false;
+    }
+    document.addEventListener("htmx:responseError", (event) =>
+      zeigeFehler(event.detail.xhr.responseText || `Fehler ${event.detail.xhr.status}`));
+    document.addEventListener("htmx:sendError", () => zeigeFehler("Server nicht erreichbar"));
+    document.addEventListener("htmx:beforeRequest", () => { document.getElementById("fehler").hidden = true; });
+  </script>
+</body>
+</html>
