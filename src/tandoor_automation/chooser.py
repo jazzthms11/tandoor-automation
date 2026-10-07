@@ -13,6 +13,9 @@ Das Modell steht hinter `Model`, einer Funktion von Systemprompt und Gesprächsv
 Ein anderer Anbieter ist eine andere Funktion, kein Umbau.
 """
 
+import json
+import logging
+import time
 from dataclasses import dataclass
 from datetime import date
 from importlib.resources import files
@@ -26,9 +29,13 @@ from tandoor_automation.bundle import PlanBundle
 from tandoor_automation.config import GeminiSettings
 from tandoor_automation.proposal import Proposal, ProposalEntry, validate_proposal
 
-ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-TIMEOUT_SECONDS = 300
-"""Ein Lauf liest das ganze Kochbuch und denkt vor der Antwort nach, das dauert."""
+ENDPOINT = (
+    "https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse"
+)
+SILENCE_SECONDS = 120
+"""So lange darf der Strom stocken. Mit den Gedanken im Strom kommt sonst laufend etwas."""
+DEADLINE_SECONDS = 600
+"""So lange darf ein Lauf insgesamt dauern, dann ist er eher in einer Schleife als fleißig."""
 TOO_MANY = 429
 METADATA = {"title", "default"}
 """Schlüssel im Schema, die nur beschreiben. Sie fallen vor dem Senden weg."""
@@ -49,6 +56,9 @@ FIX = """Die Prüfung im Code hat Mängel gefunden:
 {problems}
 
 Behebe sie und gib den ganzen Vorschlag noch einmal ab. Was in Ordnung war, bleibt."""
+
+
+log = logging.getLogger(__name__)
 
 
 class ChooserError(Exception):
@@ -104,8 +114,14 @@ class Gemini:
     def __call__(self, system: str, turns: list[Turn], schema: dict[str, Any]) -> str:
         """Schickt den Verlauf an Gemini und gibt den Text der Antwort.
 
+        Die Antwort kommt als Strom, samt den Gedanken des Modells. Ohne Strom schweigt die
+        Verbindung, bis das Modell fertig ist, und ein langes Nachdenken sieht dann aus wie eine
+        hängende Leitung. Mit Strom gilt die Wartezeit je Stück, und eine Antwort, die sich in
+        einer Schleife verliert, endet an der Frist für den ganzen Lauf.
+
         Raises:
-            ChooserError: Bei erschöpftem Kontingent oder einer Antwort ohne Text.
+            ChooserError: Bei erschöpftem Kontingent, Stillstand, Fristablauf oder einer Antwort
+                ohne Text.
         """
         body = {
             "systemInstruction": {"parts": [{"text": system}]},
@@ -113,26 +129,76 @@ class Gemini:
             "generationConfig": {
                 "responseMimeType": "application/json",
                 "responseJsonSchema": schema,
+                "thinkingConfig": {"includeThoughts": True},
             },
         }
-        response = httpx.post(
-            ENDPOINT.format(model=self._settings.gemini_model),
-            headers={"x-goog-api-key": self._settings.gemini_api_key.get_secret_value()},
-            json=body,
-            timeout=TIMEOUT_SECONDS,
+        model = self._settings.gemini_model
+        stream = _Stream(time.monotonic())
+        try:
+            with httpx.stream(
+                "POST",
+                ENDPOINT.format(model=model),
+                headers={"x-goog-api-key": self._settings.gemini_api_key.get_secret_value()},
+                json=body,
+                timeout=httpx.Timeout(30, read=SILENCE_SECONDS),
+            ) as response:
+                _check(response)
+                for line in response.iter_lines():
+                    if line.startswith("data:"):
+                        stream.take(json.loads(line.removeprefix("data:")))
+                    if stream.elapsed() > DEADLINE_SECONDS:
+                        raise ChooserError(
+                            f"Gemini ist nach {DEADLINE_SECONDS // 60} Minuten nicht fertig, "
+                            f"{stream.progress()}"
+                        )
+        except httpx.TimeoutException as error:
+            raise ChooserError(
+                f"Gemini schweigt seit {SILENCE_SECONDS} Sekunden, {stream.progress()}"
+            ) from error
+        except httpx.TransportError as error:
+            raise ChooserError(f"Gemini nicht erreichbar: {error}") from error
+        log.info("%s fertig, %s", model, stream.progress())
+        if not stream.text:
+            raise ChooserError(f"Gemini gibt keinen Text zurück, Grund: {stream.reason}")
+        return stream.text
+
+
+def _check(response: httpx.Response) -> None:
+    if response.status_code == TOO_MANY:
+        raise ChooserError("Kontingent von Gemini erschöpft, später noch einmal versuchen")
+    if response.is_error:
+        detail = response.read().decode(errors="replace")[:300]
+        raise ChooserError(f"Gemini antwortet {response.status_code}: {detail}")
+
+
+@dataclass
+class _Stream:
+    """Was vom Strom bisher ankam: Gedanken und Antwort getrennt, und warum er endete."""
+
+    started: float
+    thoughts: int = 0
+    text: str = ""
+    reason: str = "unbekannt"
+
+    def take(self, chunk: dict[str, Any]) -> None:
+        candidate = (chunk.get("candidates") or [{}])[0]
+        for part in candidate.get("content", {}).get("parts", []):
+            if part.get("thought"):
+                self.thoughts += len(part.get("text", ""))
+            else:
+                self.text += part.get("text", "")
+        self.reason = str(
+            candidate.get("finishReason") or chunk.get("promptFeedback") or self.reason
         )
-        if response.status_code == TOO_MANY:
-            raise ChooserError("Kontingent von Gemini erschöpft, später noch einmal versuchen")
-        if response.is_error:
-            raise ChooserError(f"Gemini antwortet {response.status_code}: {response.text[:300]}")
-        data = response.json()
-        candidate = (data.get("candidates") or [{}])[0]
-        parts = candidate.get("content", {}).get("parts", [])
-        text = "".join(part.get("text", "") for part in parts if not part.get("thought"))
-        if not text:
-            reason = candidate.get("finishReason") or data.get("promptFeedback") or "unbekannt"
-            raise ChooserError(f"Gemini gibt keinen Text zurück, Grund: {reason}")
-        return text
+
+    def elapsed(self) -> float:
+        return time.monotonic() - self.started
+
+    def progress(self) -> str:
+        return (
+            f"nach {self.elapsed():.0f} s kamen {self.thoughts} Zeichen Gedanken "
+            f"und {len(self.text)} Zeichen Antwort"
+        )
 
 
 @dataclass(frozen=True)

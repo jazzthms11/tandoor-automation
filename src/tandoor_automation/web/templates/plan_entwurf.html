@@ -3,7 +3,7 @@
          hx-trigger="{% if job and job.running %}every 3s{% else %}plan-geschrieben from:body{% endif %}">
   <h2>Entwurf</h2>
   {% if job and job.running %}
-  <p aria-busy="true">Das Modell wählt, das dauert bis zu einer Minute …</p>
+  <p aria-busy="true">Das Modell wählt, das dauert ein paar Minuten …</p>
   {% else %}
   {% if job and job.error %}<p class="warnung">Der letzte Lauf ist gescheitert: {{ job.error }}</p>{% endif %}
 

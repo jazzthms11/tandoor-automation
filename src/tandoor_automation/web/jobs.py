@@ -1,6 +1,6 @@
 """Arbeit, die länger dauert als eine Anfrage: der Lauf des Modells.
 
-Ein Entwurf braucht bis zu einer Minute, und so lange hält kein Reverse Proxy eine Anfrage offen.
+Ein Entwurf braucht einige Minuten, und so lange hält kein Reverse Proxy eine Anfrage offen.
 Der Lauf geht deshalb in einen eigenen Thread, und die Seite fragt alle paar Sekunden nach, ob er
 fertig ist. Das Ergebnis selbst liegt danach in der Datenbank, hier steht nur, ob gerade etwas
 läuft und ob der letzte Lauf scheiterte.
@@ -13,6 +13,8 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from threading import Lock, Thread
+
+import httpx
 
 log = logging.getLogger(__name__)
 
@@ -46,11 +48,22 @@ def start(key: str, work: Callable[[], object]) -> None:
             work()
         except Exception as error:  # noqa: BLE001
             log.exception("Lauf für %s gescheitert", key)
-            job.error = str(error) or type(error).__name__
+            job.error = _described(error)
         finally:
             job.running = False
 
     Thread(target=run, daemon=True).start()
+
+
+def _described(error: Exception) -> str:
+    """Die Meldung, bei Fehlern der Leitung mit dem Ziel. Sonst bleibt offen, wer schwieg."""
+    text = str(error) or type(error).__name__
+    if isinstance(error, httpx.RequestError):
+        try:
+            return f"{text} ({error.request.url.host})"
+        except RuntimeError:
+            return text
+    return text
 
 
 def state(key: str) -> Job | None:
