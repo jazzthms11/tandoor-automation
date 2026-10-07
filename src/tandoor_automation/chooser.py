@@ -37,6 +37,10 @@ SILENCE_SECONDS = 120
 DEADLINE_SECONDS = 600
 """So lange darf ein Lauf insgesamt dauern, dann ist er eher in einer Schleife als fleißig."""
 TOO_MANY = 429
+BUSY = {500, 503}
+"""Gemini ist überlastet. Das vergeht meist nach Sekunden, ein neuer Versuch lohnt."""
+WAITS = (15, 45, 90)
+"""Pausen vor den neuen Versuchen bei Überlastung, in Sekunden."""
 METADATA = {"title", "default"}
 """Schlüssel im Schema, die nur beschreiben. Sie fallen vor dem Senden weg."""
 ANSWER_RULES = """
@@ -117,11 +121,12 @@ class Gemini:
         Die Antwort kommt als Strom, samt den Gedanken des Modells. Ohne Strom schweigt die
         Verbindung, bis das Modell fertig ist, und ein langes Nachdenken sieht dann aus wie eine
         hängende Leitung. Mit Strom gilt die Wartezeit je Stück, und eine Antwort, die sich in
-        einer Schleife verliert, endet an der Frist für den ganzen Lauf.
+        einer Schleife verliert, endet an der Frist für den ganzen Lauf. Bei Überlastung wird
+        nach einer Pause neu gefragt.
 
         Raises:
-            ChooserError: Bei erschöpftem Kontingent, Stillstand, Fristablauf oder einer Antwort
-                ohne Text.
+            ChooserError: Bei erschöpftem Kontingent, Stillstand, Fristablauf, anhaltender
+                Überlastung oder einer Antwort ohne Text.
         """
         body = {
             "systemInstruction": {"parts": [{"text": system}]},
@@ -132,6 +137,18 @@ class Gemini:
                 "thinkingConfig": {"includeThoughts": True},
             },
         }
+        for wait in WAITS:
+            try:
+                return self._once(body)
+            except _BusyError as busy:
+                log.warning("%s, neuer Versuch in %s s", busy, wait)
+                time.sleep(wait)
+        try:
+            return self._once(body)
+        except _BusyError as busy:
+            raise ChooserError(f"{busy}, auch nach {len(WAITS)} neuen Versuchen") from busy
+
+    def _once(self, body: dict[str, Any]) -> str:
         model = self._settings.gemini_model
         stream = _Stream(time.monotonic())
         try:
@@ -163,7 +180,13 @@ class Gemini:
         return stream.text
 
 
+class _BusyError(Exception):
+    """Gemini antwortet mit Überlastung, ein späterer Versuch kann gelingen."""
+
+
 def _check(response: httpx.Response) -> None:
+    if response.status_code in BUSY:
+        raise _BusyError(f"Gemini überlastet ({response.status_code})")
     if response.status_code == TOO_MANY:
         raise ChooserError("Kontingent von Gemini erschöpft, später noch einmal versuchen")
     if response.is_error:
