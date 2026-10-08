@@ -1,6 +1,20 @@
 /* Was Pico nicht von selbst mitbringt. Mobil zuerst: die Liste ist eine Spalte, die Sterne
    rutschen auf schmalen Bildschirmen unter den Namen. */
 
+/* Pico wächst die Grundschrift mit der Fensterbreite bis auf 131 %, und an ihr hängen alle
+   Abstände. Am Laptop wirkt dann alles aufgeblasen, deshalb überall die Größe vom Handy. */
+:root {
+  --pico-font-size: 100%;
+}
+
+/* Mit Maus statt Finger reichen schmalere Knöpfe und Felder. */
+@media (min-width: 768px) {
+  :root {
+    --pico-form-element-spacing-vertical: 0.5rem;
+    --pico-form-element-spacing-horizontal: 0.875rem;
+  }
+}
+
 .rezepte {
   padding: 0;
 }
