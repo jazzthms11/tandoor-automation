@@ -5,10 +5,19 @@
 FROM python:3.13-slim
 
 # pdftotext für den Kaufland-Beleg, tzdata damit TZ=Europe/Berlin überhaupt etwas bedeutet:
-# plan apply nimmt die Zeitzone vom System, und ohne Zonendaten bliebe es bei UTC.
+# plan apply nimmt die Zeitzone vom System, und ohne Zonendaten bliebe es bei UTC. curl holt
+# Claude Code.
 RUN apt-get update \
-    && apt-get install --yes --no-install-recommends poppler-utils tzdata \
+    && apt-get install --yes --no-install-recommends poppler-utils tzdata curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+# Claude Code wählt den Wochenplan. Der Installer legt es unter /root ab, wo der Nutzer aus der
+# Compose-Datei nicht hinkommt, deshalb wandert die Datei nach /usr/local/bin. Eine neue Fassung
+# kommt mit dem nächsten Neubau ohne Cache, im Container aktualisiert es sich nicht selbst.
+ENV DISABLE_AUTOUPDATER=1
+RUN curl -fsSL https://claude.ai/install.sh | bash \
+    && cp -L /root/.local/bin/claude /usr/local/bin/claude \
+    && rm -rf /root/.local /root/.claude /root/.claude.json
 
 COPY --from=ghcr.io/astral-sh/uv:0.9 /uv /usr/local/bin/uv
 

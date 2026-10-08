@@ -19,14 +19,14 @@ from fastapi.responses import HTMLResponse, Response
 from starlette.concurrency import run_in_threadpool
 
 from tandoor_automation import drafts
-from tandoor_automation.chooser import Gemini, Model
+from tandoor_automation.chooser import ClaudeCode, Model
 from tandoor_automation.web import common, jobs
 from tandoor_automation.web.common import Tandoor, templates, week_context, week_or_next
 from tandoor_automation.workflow import Applied, clear_week
 
 router = APIRouter()
 model_factory: type[Model] | None = None
-"""Für den Probelauf ohne Schlüssel austauschbar, sonst Gemini."""
+"""Für den Probelauf ohne Anmeldung austauschbar, sonst Claude Code."""
 
 Week = Annotated[str, Form(alias="woche")]
 Version = Annotated[int, Form(alias="version")]
@@ -34,7 +34,7 @@ Index = Annotated[int, Form(alias="index")]
 
 
 def _model() -> Model:
-    return (model_factory or Gemini)()
+    return (model_factory or ClaudeCode)()
 
 
 @router.get("/plan", response_class=HTMLResponse)
