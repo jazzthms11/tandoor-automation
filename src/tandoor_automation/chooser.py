@@ -15,32 +15,25 @@ Ein anderer Anbieter ist eine andere Funktion, kein Umbau.
 
 import json
 import logging
-import time
+import os
+import shutil
+import subprocess
+import tempfile
 from dataclasses import dataclass
 from datetime import date
 from importlib.resources import files
 from typing import Any, Protocol
 
-import httpx
 from pydantic import BaseModel, Field, ValidationError
 
 from tandoor_automation.apply import share_problems, together_of, unfold
 from tandoor_automation.bundle import PlanBundle
-from tandoor_automation.config import GeminiSettings
 from tandoor_automation.proposal import Proposal, ProposalEntry, validate_proposal
 
-ENDPOINT = (
-    "https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse"
-)
-SILENCE_SECONDS = 120
-"""So lange darf der Strom stocken. Mit den Gedanken im Strom kommt sonst laufend etwas."""
+MODEL = "opus"
+"""Das Modell, das Claude Code nimmt. Ein Lauf je Woche fällt im Abo nicht ins Gewicht."""
 DEADLINE_SECONDS = 600
 """So lange darf ein Lauf insgesamt dauern, dann ist er eher in einer Schleife als fleißig."""
-TOO_MANY = 429
-BUSY = {500, 503}
-"""Gemini ist überlastet. Das vergeht meist nach Sekunden, ein neuer Versuch lohnt."""
-WAITS = (15, 45, 90)
-"""Pausen vor den neuen Versuchen bei Überlastung, in Sekunden."""
 METADATA = {"title", "default"}
 """Schlüssel im Schema, die nur beschreiben. Sie fallen vor dem Senden weg."""
 ANSWER_RULES = """
@@ -105,142 +98,82 @@ class Model(Protocol):
         ...
 
 
-class Gemini:
-    """Die Gemini API über REST, ohne das SDK von Google: ein einziger Aufruf braucht keins."""
+class ClaudeCode:
+    """Claude Code ohne Gespräch (`claude -p`), angemeldet über das Abo statt über die API.
 
-    def __init__(self, settings: GeminiSettings | None = None) -> None:
-        """Liest Schlüssel und Modell, ohne Angabe aus der Umgebung."""
-        try:
-            self._settings = settings or GeminiSettings()  # type: ignore[call-arg]
-        except ValidationError as error:
-            raise ChooserError("GEMINI_API_KEY fehlt in der .env") from error
+    Das Token kommt aus `claude setup-token` und steht als `CLAUDE_CODE_OAUTH_TOKEN` in der `.env`.
+    Claude Code bekommt keine Werkzeuge und kein Gedächtnis: es liest Regeln und Verlauf und
+    antwortet einmal gegen das Schema.
+    """
+
+    def __init__(self) -> None:
+        """Prüft, ob Claude Code da ist, damit ein Fehler vor dem Lauf auffällt und nicht in ihm."""
+        if shutil.which("claude") is None:
+            raise ChooserError("Claude Code ist nicht installiert, `claude` fehlt im Pfad")
 
     def __call__(self, system: str, turns: list[Turn], schema: dict[str, Any]) -> str:
-        """Schickt den Verlauf an Gemini und gibt den Text der Antwort.
+        """Schickt den Verlauf an Claude Code und gibt die Antwort als JSON-Text.
 
-        Die Antwort kommt als Strom, samt den Gedanken des Modells. Ohne Strom schweigt die
-        Verbindung, bis das Modell fertig ist, und ein langes Nachdenken sieht dann aus wie eine
-        hängende Leitung. Mit Strom gilt die Wartezeit je Stück, und eine Antwort, die sich in
-        einer Schleife verliert, endet an der Frist für den ganzen Lauf. Bei Überlastung wird
-        nach einer Pause neu gefragt.
+        `claude -p` kennt nur eine Eingabe und keine früheren Antworten. Der Verlauf steht deshalb
+        als ein Text da, die eigenen Antworten von vorher darin als Zitat. Gearbeitet wird in
+        einem leeren Ordner, der auch als Heimatverzeichnis dient: so findet Claude Code weder
+        die `CLAUDE.md` des Klons noch Einstellungen, und es hat etwas, wohin es schreiben darf.
 
         Raises:
-            ChooserError: Bei erschöpftem Kontingent, Stillstand, Fristablauf, anhaltender
-                Überlastung oder einer Antwort ohne Text.
+            ChooserError: Bei Fristablauf, fehlender Anmeldung oder einer Antwort ohne Ergebnis.
         """
-        body = {
-            "systemInstruction": {"parts": [{"text": system}]},
-            "contents": [{"role": turn.role, "parts": [{"text": turn.text}]} for turn in turns],
-            "generationConfig": {
-                "responseMimeType": "application/json",
-                "responseJsonSchema": schema,
-                "thinkingConfig": {"includeThoughts": True},
-            },
-        }
-        for wait in WAITS:
+        command = [
+            "claude", "-p",
+            "--model", MODEL,
+            "--system-prompt", system,
+            "--json-schema", json.dumps(schema),
+            "--output-format", "json",
+            "--tools", "",
+            "--setting-sources", "",
+            "--strict-mcp-config",
+            "--no-session-persistence",
+        ]  # fmt: skip
+        with tempfile.TemporaryDirectory() as home:
             try:
-                return self._once(body)
-            except _BusyError as busy:
-                log.warning("%s, neuer Versuch in %s s", busy, wait)
-                time.sleep(wait)
-        try:
-            return self._once(body)
-        except _BusyError as busy:
-            raise ChooserError(f"{busy}, auch nach {len(WAITS)} neuen Versuchen") from busy
-
-    def _once(self, body: dict[str, Any]) -> str:
-        model = self._settings.gemini_model
-        stream = _Stream(time.monotonic())
-        try:
-            with httpx.stream(
-                "POST",
-                ENDPOINT.format(model=model),
-                headers={"x-goog-api-key": self._settings.gemini_api_key.get_secret_value()},
-                json=body,
-                timeout=httpx.Timeout(30, read=SILENCE_SECONDS),
-            ) as response:
-                _check(response)
-                for line in response.iter_lines():
-                    if line.startswith("data:"):
-                        stream.take(line.removeprefix("data:"))
-                    if stream.elapsed() > DEADLINE_SECONDS:
-                        raise ChooserError(
-                            f"Gemini ist nach {DEADLINE_SECONDS // 60} Minuten nicht fertig, "
-                            f"{stream.progress()}"
-                        )
-        except httpx.TimeoutException as error:
-            raise ChooserError(
-                f"Gemini schweigt seit {SILENCE_SECONDS} Sekunden, {stream.progress()}"
-            ) from error
-        except httpx.TransportError as error:
-            raise ChooserError(f"Gemini nicht erreichbar: {error}") from error
-        log.info("%s fertig, %s", model, stream.progress())
-        if not stream.text:
-            raise ChooserError(
-                f"Gemini gibt keinen Text zurück, Grund: {stream.reason}, {stream.progress()}, "
-                f"letztes Stück: {stream.last[:300] or 'keins'}"
-            )
-        return stream.text
+                done = subprocess.run(
+                    command,
+                    input=_transcript(turns),
+                    capture_output=True,
+                    text=True,
+                    cwd=home,
+                    env=os.environ | {"HOME": home},
+                    timeout=DEADLINE_SECONDS,
+                    check=False,
+                )
+            except subprocess.TimeoutExpired as error:
+                raise ChooserError(
+                    f"Claude ist nach {DEADLINE_SECONDS // 60} Minuten nicht fertig"
+                ) from error
+        return _result(done)
 
 
-class _BusyError(Exception):
-    """Gemini antwortet mit Überlastung, ein späterer Versuch kann gelingen."""
+def _transcript(turns: list[Turn]) -> str:
+    """Der Verlauf als ein Text: die Beiträge des Codes, dazwischen die eigenen Antworten."""
+    parts = [
+        turn.text if turn.role == "user" else f"Deine Antwort davor:\n\n```json\n{turn.text}\n```"
+        for turn in turns
+    ]
+    return "\n\n".join(parts)
 
 
-def _check(response: httpx.Response) -> None:
-    if response.status_code in BUSY:
-        raise _BusyError(f"Gemini überlastet ({response.status_code})")
-    if response.status_code == TOO_MANY:
-        raise ChooserError("Kontingent von Gemini erschöpft, später noch einmal versuchen")
-    if response.is_error:
-        detail = response.read().decode(errors="replace")[:300]
-        raise ChooserError(f"Gemini antwortet {response.status_code}: {detail}")
-
-
-@dataclass
-class _Stream:
-    """Was vom Strom bisher ankam: Gedanken und Antwort getrennt, und warum er endete."""
-
-    started: float
-    chunks: int = 0
-    thoughts: int = 0
-    text: str = ""
-    reason: str = "unbekannt"
-    last: str = ""
-
-    def take(self, data: str) -> None:
-        """Nimmt ein Stück auf. Ein Fehler kann auch mitten im Strom kommen, statt als Status.
-
-        Raises:
-            ChooserError: Wenn das Stück ein Fehler ist.
-        """
-        self.chunks += 1
-        self.last = data.strip()
-        chunk = json.loads(data)
-        if "error" in chunk:
-            error = chunk["error"]
-            text = f"Gemini bricht ab mit {error.get('code')}: {error.get('message', '')[:200]}"
-            if error.get("code") in BUSY:
-                raise _BusyError(text)
-            raise ChooserError(text)
-        candidate = (chunk.get("candidates") or [{}])[0]
-        for part in candidate.get("content", {}).get("parts", []):
-            if part.get("thought"):
-                self.thoughts += len(part.get("text", ""))
-            else:
-                self.text += part.get("text", "")
-        self.reason = str(
-            candidate.get("finishReason") or chunk.get("promptFeedback") or self.reason
-        )
-
-    def elapsed(self) -> float:
-        return time.monotonic() - self.started
-
-    def progress(self) -> str:
-        return (
-            f"nach {self.elapsed():.0f} s kamen {self.chunks} Stücke, "
-            f"{self.thoughts} Zeichen Gedanken und {len(self.text)} Zeichen Antwort"
-        )
+def _result(done: subprocess.CompletedProcess[str]) -> str:
+    """Die strukturierte Antwort aus der Ausgabe von `claude -p --output-format json`."""
+    try:
+        output = json.loads(done.stdout)
+    except json.JSONDecodeError:
+        detail = (done.stderr or done.stdout).strip()[:300]
+        raise ChooserError(f"Claude Code bricht ab ({done.returncode}): {detail}") from None
+    answer = output.get("structured_output")
+    if output.get("is_error") or answer is None:
+        detail = str(output.get("result", ""))[:300]
+        raise ChooserError(f"Claude antwortet ohne Ergebnis ({output.get('subtype')}): {detail}")
+    log.info("Claude fertig nach %.0f s", output.get("duration_ms", 0) / 1000)
+    return json.dumps(answer)
 
 
 @dataclass(frozen=True)

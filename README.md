@@ -148,7 +148,7 @@ uv run plan clear --eintrag 181               # nur diesen Eintrag löschen
 ```
 
 Zwischen `bundle` und `check` sitzt der Wähler: im Gespräch Claude über den Skill unter
-`.claude/skills/wochenplan/`, oder Gemini über die API. Beide gehen durch dieselbe Prüfung und
+`.claude/skills/wochenplan/`, oder Claude Code ohne Gespräch für den Entwurf. Beide gehen durch dieselbe Prüfung und
 wählen nach denselben Regeln: sie stehen in `src/tandoor_automation/regeln/wochenplan.md`, der Skill
 trägt nur den Ablauf im Gespräch.
 
@@ -165,7 +165,9 @@ statt Rezept, Portionen und Notiz, oder ein Wunsch in Worten für die ganze Woch
 Änderung läuft die Prüfung, Mängel stehen am Platz. *Freigeben* fragt nach der Aufteilung der
 Mittagessen und schreibt dann wie `plan apply`.
 
-Gewählt wird über die Gemini API, Schlüssel und Modell stehen in der `.env`, siehe `.env.example`.
+Gewählt wird über Claude Code im Image (`claude -p`), angemeldet über das Abo statt über die API.
+Das Token erzeugt `claude setup-token` auf einem Rechner mit Browser, es kommt als
+`CLAUDE_CODE_OAUTH_TOKEN` in die `.env` und gilt ein Jahr.
 Findet die Prüfung Mängel, gehen sie einmal ans Modell zurück. Bleiben danach welche, kommt der
 Entwurf trotzdem, mit ihnen, und *Freigeben* bleibt gesperrt, bis sie behoben sind.
 

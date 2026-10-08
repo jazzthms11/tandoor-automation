@@ -11,7 +11,7 @@ from pathlib import Path
 from tandoor_automation import drafts, store, tables
 from tandoor_automation.apply import Slot, describe_meal
 from tandoor_automation.bundle import PlanBundle, build_bundle, next_week, parse_week
-from tandoor_automation.chooser import ChooserError, Gemini
+from tandoor_automation.chooser import ChooserError, ClaudeCode
 from tandoor_automation.config import Settings
 from tandoor_automation.proposal import MARKS, Proposal, validate_proposal
 from tandoor_automation.shopping import Choice, Need, Question
@@ -290,7 +290,7 @@ def _run_draft(week: str | None, hints: str, fresh: bool) -> None:
         return
     try:
         with TandoorClient(Settings()) as tandoor:
-            draft = drafts.create(tandoor, Gemini(), target, hints)
+            draft = drafts.create(tandoor, ClaudeCode(), target, hints)
     except ChooserError as problem:
         print(f"{target}: {problem}")
         raise SystemExit(1) from None
