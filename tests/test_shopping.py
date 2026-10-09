@@ -52,7 +52,7 @@ def test_rezeptware_wird_nur_gefragt_wenn_die_woche_sie_braucht():
 
 
 def test_vorratsware_fragt_die_zeit_und_nicht_der_plan():
-    getragen = _entry(1, BUTTER, "1", TODAY + timedelta(days=3))
+    getragen = _entry(1, BUTTER, "1", TODAY + timedelta(days=7))
     assert _review(set(), [getragen]).questions == []
     durch = _entry(1, BUTTER, "1", TODAY - timedelta(days=1))
     assert [question.food_id for question in _review(set(), [durch]).questions] == [BUTTER]
@@ -115,7 +115,7 @@ def test_leere_vorratsware_kommt_auch_ohne_rezept_auf_die_liste():
 
 
 def test_getragene_vorratsware_kommt_auch_im_plan_nicht_auf_die_liste():
-    found = _review({BUTTER}, [_entry(1, BUTTER, "1", TODAY + timedelta(days=3))])
+    found = _review({BUTTER}, [_entry(1, BUTTER, "1", TODAY + timedelta(days=7))])
     assert found.questions == []
     assert found.unasked == []
 
@@ -123,6 +123,20 @@ def test_getragene_vorratsware_kommt_auch_im_plan_nicht_auf_die_liste():
 def test_zeile_ohne_intervall_verschiebt_die_spalten_nicht():
     intervals = parse_intervals("# Kopf\n7\t10\tQuark\tMedian 9\n\t20\tHonig\tkeine Käufe\n")
     assert intervals == {10: 7}
+
+
+def test_faellig_ist_was_bis_sonntag_ablaeuft():
+    """Was Freitag abläuft, gehört schon auf die Liste vom Dienstag."""
+    sonntag = _entry(1, BUTTER, "1", date(2026, 9, 27))
+    assert [question.food_id for question in _review(set(), [sonntag]).questions] == [BUTTER]
+    montag = _entry(1, BUTTER, "1", date(2026, 9, 28))
+    assert _review(set(), [montag]).questions == []
+
+
+def test_intervalle_werden_auf_ganze_wochen_abgerundet():
+    intervals = {10: 10, 20: 3}
+    assert confirmed_until(TODAY, 10, intervals) == TODAY + timedelta(days=7)
+    assert confirmed_until(TODAY, 20, intervals) == TODAY + timedelta(days=7)
 
 
 def test_ohne_eigenes_intervall_gilt_der_rueckfall():

@@ -8,6 +8,11 @@ Die Antwort überschreibt den Bestand, sie rechnet ihn nicht ab. Zwischen zwei F
 Menge deshalb nicht ab: der Bestand ist eine Momentaufnahme mit Datum und keine laufende Bilanz.
 Was davon zu halten ist, sagt `expires`.
 
+Gefragt wird, was bis Sonntag fällig wird, und nicht nur, was heute fällig ist. Sonst kämen am
+Freitag Fragen dazu, die am Donnerstag beim Schreiben der Liste noch fehlten. Damit das aufgeht,
+trägt eine Antwort ganze Wochen: sie wird am selben Wochentag wieder fällig und fällt so in die
+Woche des nächsten Einkaufs, egal an welchem Tag er ist.
+
 Die Staffel der Antworten kommt aus der gebuchten Menge und nicht aus einer Tabelle. Zwei
 Packungen Tiefkühlobst sind ein voller Schrank, acht Dosen Tomaten sind es auch, und eine feste
 Grenze träfe immer nur eines von beidem.
@@ -110,7 +115,7 @@ def review(
         stock: Name, Ort und Klasse je Lebensmittel, das Bestand führt.
         fresh: Name, Ort und Klasse je Lebensmittel, das je Plan gekauft wird.
         units: Name je Einheiten-ID.
-        today: Der Tag, gegen den `expires` geprüft wird.
+        today: Fällig ist, was bis zum Sonntag dieser Woche abläuft.
 
     Returns:
         Die Fragen und die Lebensmittel, die ungefragt auf die Liste gehen, beide nach Ort und
@@ -241,6 +246,9 @@ def describe_need(need: Need) -> str:
 def confirmed_until(today: date, food_id: int, intervals: dict[int, int]) -> date:
     """Sagt, bis wann eine Antwort von heute trägt.
 
+    Das Intervall wird auf ganze Wochen abgerundet, mindestens eine. Aufgerundet läge zwischen
+    Ablauf und nächster Frage bis zu eine Woche, in der nichts mehr da sein kann.
+
     Args:
         today: Der Tag der Antwort.
         food_id: Das bestätigte Lebensmittel.
@@ -249,7 +257,8 @@ def confirmed_until(today: date, food_id: int, intervals: dict[int, int]) -> dat
     Returns:
         Der Tag, ab dem wieder gefragt wird.
     """
-    return today + timedelta(days=intervals.get(food_id, FALLBACK_DAYS))
+    days = intervals.get(food_id, FALLBACK_DAYS)
+    return today + timedelta(weeks=max(1, days // 7))
 
 
 def describe(question: Question, need: Need | None = None) -> str:
@@ -266,7 +275,8 @@ def _due(food: StockFood, entry: InventoryEntry, in_plan: bool, today: date) -> 
     """Sagt, ob dieser Eintrag diese Woche einen Auslöser hat."""
     if food.stock_class == BY_PLAN:
         return in_plan
-    return entry.expires is None or entry.expires <= today
+    sunday = today + timedelta(days=6 - today.weekday())
+    return entry.expires is None or entry.expires <= sunday
 
 
 def _choices(stock_class: str, amount: Decimal) -> list[Choice]:

@@ -290,7 +290,7 @@ def shopping_check(tandoor: TandoorClient, week: str, today: date) -> ShoppingCh
     Args:
         tandoor: Der Zugang zu Tandoor.
         week: Zielwoche als ISO-Woche.
-        today: Der Tag, gegen den `expires` geprüft wird.
+        today: Fällig ist, was bis zum Sonntag dieser Woche abläuft.
 
     Returns:
         Die Fragen samt dem Bedarf der Woche je Lebensmittel.
