@@ -177,6 +177,20 @@ def set_details(week: str, version: int, index: int, servings: float, note: str)
     return _edit(week, version, change)
 
 
+def refresh_recipes(tandoor: TandoorClient, week: str, version: int) -> WeekDraft:
+    """Holt das Kochbuch neu in den Entwurf, damit seit dem Entwurf angelegte Rezepte erscheinen.
+
+    Nur die Rezepte samt Bewertung werden ersetzt. Plan und Historie bleiben, wie sie waren.
+
+    Raises:
+        StaleDraftError: Wenn der Entwurf inzwischen anders aussieht.
+    """
+    current = _current(week, version)
+    bundle = current.bundle.model_copy(update={"recipes": tandoor.recipes()})
+    chosen = Chosen(current.proposal, current.reasoning, check(current.proposal, bundle))
+    return _save(week, chosen, bundle, current.hints, version)
+
+
 def discard(week: str) -> None:
     """Verwirft den Entwurf einer Woche."""
     store.drop_draft(week)

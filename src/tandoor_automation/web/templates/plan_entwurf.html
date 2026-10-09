@@ -96,6 +96,9 @@
   <div class="grid">
     <button hx-get="/plan/entwurf/freigabe?woche={{ week }}&version={{ draft.version }}" hx-target="#freigabe" hx-swap="innerHTML"
             {% if draft.problems %}disabled title="Erst die Mängel beheben"{% endif %}>Freigeben …</button>
+    <button class="secondary outline" hx-post="/plan/entwurf/rezepte" hx-include="#entwurf-stand"
+            hx-target="#entwurf" hx-swap="outerHTML" hx-disabled-elt="this"
+            title="Neu angelegte Rezepte in Suche und Modell aufnehmen">Rezepte neu holen</button>
     <button class="secondary outline" hx-post="/plan/entwurf/verwerfen" hx-include="#entwurf-stand"
             hx-target="#entwurf" hx-swap="outerHTML" hx-confirm="Entwurf verwerfen?">Verwerfen</button>
   </div>

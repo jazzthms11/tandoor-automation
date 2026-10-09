@@ -140,6 +140,13 @@ def details(
     return _section(request, week)
 
 
+@router.post("/plan/entwurf/rezepte", response_class=HTMLResponse)
+def refresh_recipes(request: Request, tandoor: Tandoor, week: Week, version: Version) -> Response:
+    """Holt die Rezepte neu aus Tandoor, etwa nach einem frisch angelegten Rezept."""
+    drafts.refresh_recipes(tandoor, week, version)
+    return _section(request, week)
+
+
 @router.post("/plan/entwurf/verwerfen", response_class=HTMLResponse)
 def discard(request: Request, week: Week) -> Response:
     """Verwirft den Entwurf, danach lässt sich neu entwerfen."""
