@@ -13,9 +13,11 @@ from pathlib import Path
 
 import pytest
 
-from tandoor_automation.receipts import PIECE, parse_kaufland
+from tandoor_automation.receipts import KILOGRAM, PIECE, parse_kaufland
 
-BON = (Path(__file__).parent / "fixtures" / "kaufland_bon.txt").read_text(encoding="utf-8")
+FIXTURES = Path(__file__).parent / "fixtures"
+BON = (FIXTURES / "kaufland_bon.txt").read_text(encoding="utf-8")
+GEWICHT = (FIXTURES / "kaufland_bon_gewicht.txt").read_text(encoding="utf-8")
 
 
 def _position(name: str):
@@ -56,6 +58,17 @@ def test_name_von_der_zeile_darueber():
     tee = _position("KBio.Kamillentee")
     assert tee.quantity == Decimal("2")
     assert tee.unit_price == Decimal("0.71")
+
+
+def test_gewichtsware_in_kilo():
+    """Gewogenes trägt den Namen auf der Zeile darüber und darunter nur das Gewicht.
+
+    Ein Kilopreis steht nicht auf dem Beleg, er folgt aus Betrag und Gewicht.
+    """
+    kuerbis = parse_kaufland(GEWICHT).items[0]
+    assert kuerbis.name == "Kürbis Hokkaido kg"
+    assert kuerbis.quantity == Decimal("1.958")
+    assert kuerbis.unit == KILOGRAM
 
 
 def test_rabattzeile_wird_keine_eigene_position():

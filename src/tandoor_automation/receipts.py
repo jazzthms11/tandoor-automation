@@ -38,6 +38,10 @@ PRICED = re.compile(r"^(?P<rest>.*?)\s\s+(?P<total>-?\d+,\d{2})(?:\s+(?P<tax>[A-
 sondern ein Rabatt: `K Card XTRA Rabatt` hängt am Artikel darüber."""
 MULTIPLE = re.compile(r"(?P<quantity>\d+)\s*\*\s*(?P<unit_price>\d+,\d{2})\s*$")
 """Die Stückrechnung, entweder hinter dem Namen oder allein auf der Zeile darunter."""
+WEIGHED = re.compile(r"^(?P<kilos>\d+,\d{3})\s*kg$")
+"""Das Gewicht einer gewogenen Position, allein auf der Zeile unter dem Namen. Einen Kilopreis
+druckt Kaufland nicht."""
+CENT = Decimal("0.01")
 STAMP = re.compile(r"Datum:(\d{2})\.(\d{2})\.(\d{2}).*?Bon:(\d+)")
 REGISTER = re.compile(r"Filiale:\s*(\d+)\s*Kasse:\s*(\d+)")
 CITY = re.compile(r"^\d{5}\s+(\S.*)$")
@@ -166,6 +170,8 @@ def _kaufland_item(found: re.Match[str], pending: str) -> ReceiptItem:
 
     Der Name steht entweder vor der Stückrechnung oder, wenn er dafür zu lang war, allein auf
     der Zeile darüber. Ohne Stückrechnung ist die Menge eins und der Betrag der Einzelpreis.
+    Gewogenes trägt seinen Namen immer auf der Zeile darüber, der Kilopreis folgt aus Betrag und
+    Gewicht.
 
     Args:
         found: Die getroffene Betragszeile.
@@ -178,6 +184,15 @@ def _kaufland_item(found: re.Match[str], pending: str) -> ReceiptItem:
         ValueError: Wenn zu einem Betrag kein Name zu finden ist.
     """
     rest = found["rest"].strip()
+    weighed = WEIGHED.match(rest)
+    if weighed and pending:
+        kilos = _amount(weighed["kilos"])
+        return ReceiptItem(
+            name=pending,
+            quantity=kilos,
+            unit=KILOGRAM,
+            unit_price=_amount(found["total"]) / kilos,
+        )
     several = MULTIPLE.search(rest)
     name = rest[: several.start()].strip() if several else rest
     name = name or pending
@@ -195,7 +210,8 @@ def _balance(items: list[ReceiptItem], discounts: Decimal, printed: Decimal) -> 
     """Rechnet die gelesenen Positionen gegen die gedruckte Summe.
 
     Fällt eine Zeile durch das Raster, ist der Bon nicht halb gelesen, sondern falsch: die Ware
-    käme nie in den Bestand, und aufgefallen wäre es niemandem.
+    käme nie in den Bestand, und aufgefallen wäre es niemandem. Jede Position zählt auf den Cent
+    gerundet, wie gedruckt: der Kilopreis einer gewogenen ist ein Bruch.
 
     Args:
         items: Die gelesenen Positionen.
@@ -205,7 +221,8 @@ def _balance(items: list[ReceiptItem], discounts: Decimal, printed: Decimal) -> 
     Raises:
         ValueError: Wenn beides nicht übereinstimmt.
     """
-    counted = sum((item.quantity * item.unit_price for item in items), Decimal(0)) + discounts
+    counted = sum(((item.quantity * item.unit_price).quantize(CENT) for item in items), Decimal(0))
+    counted += discounts
     if counted != printed:
         raise ValueError(f"Positionen ergeben {counted}, auf dem Beleg steht {printed}")
 
