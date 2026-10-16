@@ -175,9 +175,7 @@ class CookLog(BaseModel):
 class Food(BaseModel):
     """Ein Lebensmittel aus `/api/food/`, reduziert auf das, was eine Zuordnung entscheidbar macht.
 
-    Die Kategorie steht in der Antwort verschachtelt und fehlt bei elf Lebensmitteln ganz. Sie
-    trennt die Gleichnamigen: `Mozzarella` steht unter Molkereiprodukte, der fettreduzierte unter
-    Käse.
+    Die Kategorie steht in der Antwort verschachtelt und fehlt bei elf Lebensmitteln ganz.
     """
 
     id: int
