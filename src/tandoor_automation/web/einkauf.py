@@ -40,7 +40,13 @@ def questions(request: Request, tandoor: Tandoor, woche: str = "") -> Response:
     return templates.TemplateResponse(
         request,
         "einkauf_fragen.html",
-        {"week": week, "places": places, "unasked": check.review.unasked, "needs": needs},
+        {
+            "week": week,
+            "places": places,
+            "unasked": check.review.unasked,
+            "needs": needs,
+            "unclassified": check.unclassified,
+        },
     )
 
 

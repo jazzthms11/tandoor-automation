@@ -209,6 +209,8 @@ def _run_shop(week: str | None, dry_run: bool) -> None:
     today = date.today()
     with TandoorClient(Settings()) as tandoor:
         check = shopping_check(tandoor, target, today)
+        if check.unclassified:
+            print(f"ohne Klasse, nicht auf der Liste: {', '.join(check.unclassified)}")
         answers = _ask(check.review.questions, check.demand)
         bookings = book_answers(tandoor, check.review, answers, today, dry_run)
         listed = write_list(tandoor, check, answers, dry_run)

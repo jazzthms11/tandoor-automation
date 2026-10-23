@@ -101,6 +101,30 @@ def fresh_foods(
     return _in_classes(foods, categories, exceptions, BUYS_FRESH)
 
 
+def unclassified(
+    foods: list[Food], categories: dict[str, Placement], exceptions: dict[int, Placement]
+) -> dict[int, str]:
+    """Sucht die Lebensmittel heraus, die weder Kategorie noch Ausnahme eine Klasse gibt.
+
+    Sie fallen sonst durch jede Auswahl: nicht gefragt, nicht ungefragt gekauft, und kein Fehler
+    sagt es. Ein neu angelegtes Lebensmittel ohne Supermarkt-Kategorie ist der übliche Fall.
+
+    Args:
+        foods: Alle Lebensmittel aus Tandoor.
+        categories: Klasse und Ort je Kategorie.
+        exceptions: Klasse und Ort je abweichendem Lebensmittel.
+
+    Returns:
+        Name je Lebensmittel ohne Klasse.
+    """
+    found = {}
+    for food in foods:
+        placement = _resolve(food, categories, exceptions)
+        if placement is None or not placement.stock_class:
+            found[food.id] = food.name
+    return found
+
+
 def _in_classes(
     foods: list[Food],
     categories: dict[str, Placement],

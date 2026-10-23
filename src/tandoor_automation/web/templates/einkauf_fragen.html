@@ -1,5 +1,6 @@
 <form hx-post="/einkauf" hx-target="#ergebnis" hx-swap="innerHTML show:top" hx-disabled-elt="find button">
   <input type="hidden" name="woche" value="{{ week }}">
+  {% if unclassified %}<p class="warnung">Ohne Klasse, kommt nicht auf die Liste: {{ unclassified|join(", ") }}. In Tandoor eine Supermarkt-Kategorie setzen.</p>{% endif %}
   {% for place, questions in places %}
   <h2 class="ort">{{ place or "ohne Ort" }}</h2>
   {% for question in questions %}

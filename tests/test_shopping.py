@@ -7,8 +7,8 @@ Frage zu wenig kauft nichts nach, eine Frage zu viel nervt, und beides fällt er
 from datetime import date, timedelta
 from decimal import Decimal
 
-from tandoor_automation.classes import StockFood
-from tandoor_automation.models import InventoryEntry, PlannedMeal, RecipeDetail
+from tandoor_automation.classes import Placement, StockFood, unclassified
+from tandoor_automation.models import Food, InventoryEntry, PlannedMeal, RecipeDetail
 from tandoor_automation.shopping import (
     buy_list,
     confirmed_until,
@@ -195,3 +195,14 @@ def test_verschiedene_einheiten_bleiben_getrennt():
     assert describe_need(found[TOMATEN]) == (
         "braucht diese Woche: Chili, Suppe, zusammen 400 g, 2 Stück"
     )
+
+
+def test_lebensmittel_ohne_klasse_werden_gefunden():
+    foods = [
+        Food.model_validate({"id": 1, "name": "Sushi-Reis", "supermarket_category": None}),
+        Food.model_validate({"id": 2, "name": "Salz", "supermarket_category": {"name": "Gewürz"}}),
+        Food.model_validate({"id": 3, "name": "Lachs", "supermarket_category": None}),
+    ]
+    categories = {"Gewürz": Placement("immer_da", "")}
+    exceptions = {3: Placement("frisch", "")}
+    assert unclassified(foods, categories, exceptions) == {1: "Sushi-Reis"}

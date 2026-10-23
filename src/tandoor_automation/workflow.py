@@ -29,7 +29,7 @@ from tandoor_automation.apply import (
     without,
 )
 from tandoor_automation.bundle import SPILLOVER, PlanBundle, week_days
-from tandoor_automation.classes import fresh_foods, stock_foods
+from tandoor_automation.classes import fresh_foods, stock_foods, unclassified
 from tandoor_automation.models import PlannedMeal
 from tandoor_automation.proposal import Proposal, validate_proposal
 from tandoor_automation.rating import RatingChange, changes, own_base_ratings
@@ -100,10 +100,15 @@ class RatingSync:
 
 @dataclass(frozen=True)
 class ShoppingCheck:
-    """Was vor dem Einkauf zu klären ist, und was die Woche je Lebensmittel braucht."""
+    """Was vor dem Einkauf zu klären ist, und was die Woche je Lebensmittel braucht.
+
+    `unclassified` sind die Zutaten der Woche ohne Klasse, nach Name sortiert. Sie kommen nicht
+    auf die Liste und werden deshalb gemeldet.
+    """
 
     review: Review
     demand: dict[int, Need]
+    unclassified: list[str]
 
 
 @dataclass(frozen=True)
@@ -307,7 +312,10 @@ def shopping_check(tandoor: TandoorClient, week: str, today: date) -> ShoppingCh
         {unit_id: name for name, unit_id in tandoor.units().items()},
         today,
     )
-    return ShoppingCheck(found, demand)
+    missing = unclassified(foods, categories, exceptions)
+    return ShoppingCheck(
+        found, demand, sorted(missing[food_id] for food_id in demand if food_id in missing)
+    )
 
 
 def _planned_needs(tandoor: TandoorClient, week: str) -> dict[int, Need]:
