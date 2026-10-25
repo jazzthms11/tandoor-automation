@@ -32,6 +32,8 @@
 457	2	0	100 g	100	Frischhefe
 505	7	15	100 g	300	Kümmel
 423	1	7	100 g	100	Kidneybohnen
+201	0	1	100 g	32	Hafermilch
+660	5.5	18.7	100 g	339	Hefeflocken
 
 # --- Standardwerte ---
 514	0.5	0	100 ml	10	Bratenfond
@@ -88,6 +90,7 @@
 17	3.2	0	100 g	210	Frischkäse
 103	0	0	100 g	260	Garam Masala
 109	1.7	0.5	100 g	15	Gurke
+356	0.8	10.5	100 g	389	Hafervollkornmehl
 112	2.68	6.5	100 g	40	Himbeeren
 10	0	0	100 g	166	Hähnchenbrust
 47	4	0	100 g	265	Joghurt
@@ -100,6 +103,7 @@
 281	2.25	10.5	100 g	0	Kreuzkümmel
 227	1.4	5.08	100 g	350	Kürbiskerne
 286	0	26.3	100 g	313	Lorbeerblatt
+20	4.63	9.27	100 g	622	Mandeln gemahlen
 370	4.2	1.16	100 g	35	Paprika, rot
 45	0.64	0	100 g	392	Parmesan
 35	3	0	100 g	157	Ricotta
@@ -109,6 +113,7 @@
 5	2.9	3.3	100 g	0	Senf
 261	1.7	14	100 g	101	Thymian
 305	1	10.6	100 g	370	Vollkornmehl
+130	2.17	53.1	100 g	247	Zimt
 31	99.8	0	100 g	385	Zucker
 81	0.8	1.3	100 g	15	grüner Salat
 23	4.1	0	100 g	84	körniger Frischkäse
